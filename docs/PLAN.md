@@ -131,11 +131,11 @@ Three pitch sentences: …
 
 ## Phase 6 — Decision Desk
 
-- [ ] 6.1 Controls: DeliveryDatePicker (◀ ▶ + keyboard), AuctionSelector (with custom time), ConfidenceSelect, View toggle.
-- [ ] 6.2 Context strip, KPI cards (Trader view vs Hindsight), summary paragraph.
-- [ ] 6.3 Main chart: forecast, firm band, actual, shortfall highlight.
-- [ ] 6.4 Vintages chart with decision/after-cutoff styling.
-- [ ] 6.5 Partial-coverage banner; deep-link support (`/?date=2026-01-21&auction=n2ex&conf=0.9&view=hindsight`).
+- [x] 6.1 Controls: DeliveryDatePicker (◀ ▶ + keyboard), AuctionSelector (with custom time), ConfidenceSelect, View toggle.
+- [x] 6.2 Context strip, KPI cards (Trader view vs Hindsight), summary paragraph.
+- [x] 6.3 Main chart: forecast, firm band, actual, shortfall highlight.
+- [x] 6.4 Vintages chart with decision/after-cutoff styling.
+- [x] 6.5 Partial-coverage banner; deep-link support (`/?date=2026-01-21&auction=n2ex&conf=0.9&view=hindsight`).
 
 **DoD:** PRD F1 ACs 1–9 pass · a story day from `INSIGHTS.md` looks right in both views.
 

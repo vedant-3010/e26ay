@@ -12,7 +12,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 3 Notebook + insights | ✅ done | ~0.75 h | Notebook executed with outputs; `INSIGHTS.md` written by it; alignment check changes nothing |
 | 4 API | ✅ done | ~1.0 h | 5 endpoints; 54 API tests + 15 API contract tests; cold ≤ 36 ms, warm ≈ 1 ms |
 | 5 Frontend + Monitor | ✅ done | ~1.5 h | All PRD F2 ACs pass; 366 KB gz JS total (129 KB shell); no overflow at 375 px |
-| 6 Decision Desk | ⬜ | | |
+| 6 Decision Desk | ✅ done | ~1.5 h | F1 ACs 1–9 pass; story days 27/28 Jan checked in both views; app-wide visual refinement |
 | 7 Accuracy Lab + Methodology | ⬜ | | |
 | 8 Polish + release | ⬜ | | |
 | 9 Stretch | ⬜ | | |
@@ -29,6 +29,7 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 2. Commits are approved by the human one batch at a time (standing instruction). Pushing is the human's call.
 
 ## Decisions taken by Claude Code (the human asked for this on 2026-10-26)
+- **Process (later the same day):** the human said "take decisions on your own, don't ask me, I am not available … complete till phase 8". From Phase 6 onward Claude Code commits and pushes without asking, still with no AI attribution, and records every decision here.
 - **Pitch framing of the over-forecast:** "a structural gap between the two Elexon datasets that we quantify and buffer against, worth confirming with your data team", not "the forecast is bad".
 - **Story-day order for Part 1:** open on **Tue 27 Jan** (the buffer did its job), then **Wed 28 Jan** as the honest limit, with Sat 17 Jan available as the typical day. Applied in Phase 8 when filling `DEMO_SCRIPT.md`.
 - **Default buffer method:** conditional (level-based) LODO, per PRD F4 "Should". The flat-buffer trade-off (−633 MW held back, −1.6 pp coverage at 90%) is stated on the Methodology page.
@@ -36,6 +37,42 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 6: Decision Desk ✅ (+ app-wide visual refinement)
+- **Built:**
+  - Controls:
+    - `DeliveryDatePicker`: ◀ ▶ disabled at the bounds, a native date input, and the day written out. ← / → work page-wide, except inside inputs, sliders and radio groups.
+    - `AuctionSelector`: EPEX 09:20 | N2EX 09:50 | Custom. The custom time uses 15-minute steps; an off-step time shows an error instead of being replaced silently.
+    - Confidence 80/90/95, and a View toggle (Trader view | Hindsight, default Hindsight).
+  - URL state `date, auction, cutoff, conf, view`; defaults and bounds come from `/api/meta`, and invalid URL values fall back to the defaults.
+  - `DecisionTimeline` (run used → gate closure → delivery, with lead range), a partial-coverage banner, the KPI readout (Trader: forecast GWh, firm wind, buffer held back; Hindsight: plus actual GWh with % vs forecast, day MAE, largest shortfall with time, firm wind held n/24), and the templated summary (`summary` vs `summary_trader`).
+  - Main chart: forecast, firm band, and in Hindsight the actual plus gap-only shortfall fills.
+  - Vintages chart: older runs lighter, the decision run bold green, after-cutoff runs dashed and hidden in the Trader view, and a tooltip summarising earliest / decision / latest runs.
+  - CSV export (actuals only in Hindsight).
+- **Visual refinement (applied to Monitor and Desk; UI_SPEC §1.1 added):** `Figure`/`Readout` instrument-panel figures, `ChartPanel` + HTML `ChartLegend`, a timeline context strip, a sticky desktop toolbar, a new brand mark and favicon, mono header metadata, a refined page header, and a quieter summary block.
+  - Fixed from screenshots:
+    - full-height shortfall bands were too loud → gap-only fills;
+    - amber over green turned muddy → the band recedes to 8% in Hindsight;
+    - KPI values wrapped on mobile → `Figure` never wraps;
+    - the canvas legend overlapped the plot on mobile → HTML legend.
+- **PRD F1 acceptance criteria:**
+  - [x] 1. Date picker limited to 2 Jan – 1 Feb with previous/next buttons (+ ← / →).
+  - [x] 2. Auction selector EPEX (default) / N2EX / Custom (15-minute steps).
+  - [x] 3. Context strip: cutoff (UK), run used (publish time, UK), lead range ("16.5–39.5 h ahead").
+  - [x] 4. Forecast, firm band at 80/90/95% (default 90%), half-hourly actuals in Hindsight, shortfall highlighted.
+  - [x] 5. KPI cards as specified, including "firm-wind hours kept" (e.g. 23/24 h).
+  - [x] 6. Templated plain-English summary (no LLM). The Trader view gets an outcome-free variant.
+  - [x] 7. Forecast evolution with the decision run emphasised; runs after the cutoff dashed and labelled "not available at decision time".
+  - [x] 8. No look-ahead: backend contract tests (Phases 2 and 4); the UI also hides after-cutoff runs and outcome data in the Trader view (tests).
+  - [x] 9. Partial coverage: gaps plus an explanatory banner; never substituted.
+- **Story days checked in both views** (real snapshot, screenshots at 1280 px light/dark and 375 px):
+  - Tue 27 Jan: 477 → 394 GWh, firm held 23/24 h; the only red area is 23:00.
+  - Wed 28 Jan: 267 → 138 GWh, firm held 0/24 h; the dashed later runs trend down toward the actual.
+  - Trader view: no actual, no outcome KPIs, no after-cutoff runs.
+- **Checks:**
+  - `make check` ✅: 293 pytest (99.66%), **68 Vitest** (+19: decision/vintages option builders, page flows incl. deep link, keyboard, custom-cutoff validation, Trader/Hindsight visibility, CSV), lint and types clean.
+  - **JS 378 KB gzipped** in total: shell 129, a shared ECharts chunk 230, pages 9 each.
+  - At 375 px, `scrollWidth` = viewport; no console errors.
 
 ### 2026-10-26 — Phase 5: Frontend foundation and Forecast Monitor ✅
 - **Built:**
