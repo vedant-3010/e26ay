@@ -1,0 +1,145 @@
+/*
+ * WindDesk design tokens — "calm control room" (UI_SPEC §1).
+ * This file is the ONLY place colour literals may appear. Components use the semantic
+ * Tailwind utilities generated below (`text-actual`, `bg-firm`, `border-cutoff`, …) or,
+ * for charts, read the CSS variables at runtime.
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Semantic data colours — fixed meaning across every page and chart. */
+  --color-actual: var(--actual);
+  --color-forecast: var(--forecast);
+  --color-firm: var(--firm);
+  --color-shortfall: var(--shortfall);
+  --color-shortfall-severe: var(--shortfall-severe);
+  --color-surplus: var(--surplus);
+  --color-cutoff: var(--cutoff);
+
+  /* shadcn/ui surface tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  --container-content: 1280px;
+  --container-reading: 760px; /* Methodology long-form width (UI_SPEC §3.4) */
+}
+
+/* Light (default). Neutrals follow Tailwind's slate scale. */
+:root {
+  --actual: #2563eb;
+  --forecast: #16a34a;
+  --firm: color-mix(in srgb, var(--forecast) 18%, transparent);
+  --shortfall: #d97706;
+  --shortfall-severe: #dc2626;
+  --surplus: #64748b;
+  --cutoff: #334155;
+
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0f172a;
+  --primary-foreground: #f8fafc;
+  --secondary: #f1f5f9; /* slate-100 */
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* slate-500: 4.6:1 on slate-50, AA */
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --border: #e2e8f0; /* slate-200 */
+  --input: #e2e8f0;
+  --ring: #94a3b8; /* slate-400 */
+  --chart-grid: #e2e8f0;
+
+  --radius: 0.5rem; /* 8px */
+  color-scheme: light;
+}
+
+.dark {
+  --actual: #60a5fa;
+  --forecast: #4ade80;
+  --shortfall: #fbbf24;
+  --shortfall-severe: #f87171;
+  --surplus: #94a3b8;
+  --cutoff: #cbd5e1;
+
+  --background: #020617; /* slate-950 */
+  --foreground: #f1f5f9;
+  --card: #0f172a; /* slate-900 */
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #f1f5f9;
+  --primary-foreground: #0f172a;
+  --secondary: #1e293b; /* slate-800 */
+  --secondary-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8; /* slate-400: 6.9:1 on slate-900, AA */
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
+  --destructive: #f87171;
+  --border: #1e293b;
+  --input: #334155;
+  --ring: #64748b;
+  --chart-grid: #1e293b;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* 14px base text (UI_SPEC §1 density); numbers align everywhere. */
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
