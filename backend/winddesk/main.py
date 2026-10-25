@@ -19,6 +19,7 @@ from .api.errors import install_error_handlers
 from .config import get_settings
 from .logs import configure_logging
 from .snapshot import read_snapshot_id
+from .store import SnapshotMissingError, get_store
 
 log = logging.getLogger("winddesk")
 
@@ -31,11 +32,14 @@ FRONTEND_DIST = "frontend/dist"
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     t0 = time.perf_counter()
     settings = get_settings()
-    snapshot_id = read_snapshot_id(settings.data_path)
+    try:
+        get_store()  # load + precompute now, so the first request is fast
+    except SnapshotMissingError as exc:
+        log.warning("no data snapshot; data endpoints will fail", extra={"error": str(exc)})
     log.info(
         "startup complete",
         extra={
-            "snapshot_id": snapshot_id,
+            "snapshot_id": read_snapshot_id(settings.data_path),
             "data_dir": str(settings.data_path),
             "duration_ms": round((time.perf_counter() - t0) * 1000, 1),
         },

@@ -35,8 +35,8 @@ dev-web: ## Vite dev server on :5173 (proxies /api to :8000)
 ingest: ## Rebuild data/snapshot from Elexon (add ARGS="--offline" to use the raw cache)
 	$(UV) run python -m winddesk.ingest --start 2025-12-30 --end 2026-02-01 $(ARGS)
 
-test: ## Fast tests: pytest (no snapshot marker) + Vitest
-	$(UV) run pytest -m "not snapshot" --cov --cov-report=term
+test: ## Fast tests: pytest (no snapshot marker, ≥ 90% analytics coverage) + Vitest
+	$(UV) run pytest -m "not snapshot" --cov=winddesk.analytics --cov-report=term-missing:skip-covered --cov-fail-under=90
 	$(NPM) --prefix $(FE) test
 
 test-contract: ## Real-data contract tests against the committed snapshot

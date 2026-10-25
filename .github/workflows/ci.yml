@@ -27,7 +27,8 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
-      - run: uv run pytest -m "not snapshot" --cov --cov-report=term
+      - name: Tests (≥ 90% line coverage on winddesk.analytics)
+        run: uv run pytest -m "not snapshot" --cov=winddesk.analytics --cov-report=term-missing:skip-covered --cov-fail-under=90
       - name: Contract tests on the committed snapshot
         if: hashFiles('data/snapshot/manifest.json') != ''
         run: uv run pytest -m snapshot
