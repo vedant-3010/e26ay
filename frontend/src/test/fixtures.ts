@@ -1,5 +1,7 @@
 /** Typed API payloads for tests. The generated types keep them honest against the contract. */
-import type { Health, Meta, Metrics, MonitorData } from '@/api/client'
+import { screen } from '@testing-library/react'
+
+import type { DecisionData, Health, Meta, Metrics, MonitorData } from '@/api/client'
 
 export const HEALTH: Health = {
   status: 'ok',
@@ -104,4 +106,98 @@ export function fetchRoutes(routes: Record<string, unknown>) {
       ? Response.json((body as (u: URL) => unknown)(url))
       : Response.json(body)
   })
+}
+
+/** A 4-hour "day" (enough to exercise every branch), EPEX cutoff Wed 14 Jan 09:20:
+ * 00:00 forecast 10,000 / firm 8,000 / actual 9,000 → shortfall, firm held;
+ * 01:00 forecast 10,000 / firm 8,000 / actual 7,000 → below firm wind;
+ * 02:00 forecast 9,000 / firm 7,500 / actual 9,500 → surplus;
+ * 03:00 gap in the decision run (never filled). */
+export function decisionData(overrides: Partial<DecisionData> = {}): DecisionData {
+  const t = (h: number, m = 0) => `2026-01-15T${String(h).padStart(2, '0')}:${m ? '30' : '00'}:00Z`
+  return {
+    delivery_date: '2026-01-15',
+    cutoff: { local: '09:20', utc: '2026-01-14T09:20:00Z', auction: 'epex' },
+    run: {
+      publish_time: '2026-01-14T07:30:00Z',
+      lead_min_h: 16.5,
+      lead_max_h: 18.5,
+      partial: true,
+      missing_hours: [t(3)],
+    },
+    forecast: [
+      { t: t(0), mw: 10000, firm_mw: 8000, lead_h: 16.5 },
+      { t: t(1), mw: 10000, firm_mw: 8000, lead_h: 17.5 },
+      { t: t(2), mw: 9000, firm_mw: 7500, lead_h: 18.5 },
+      { t: t(3), mw: null, firm_mw: null, lead_h: null },
+    ],
+    actual: [
+      { t: t(0), mw: 9000 },
+      { t: t(0, 30), mw: 9100 },
+      { t: t(1), mw: 7000 },
+      { t: t(1, 30), mw: 7500 },
+      { t: t(2), mw: 9500 },
+      { t: t(2, 30), mw: 9400 },
+      { t: t(3), mw: 9000 },
+      { t: t(3, 30), mw: 8800 },
+    ],
+    kpis: {
+      forecast_mwh: null,
+      actual_mwh: 34650,
+      energy_error_pct: null,
+      avg_firm_mw: 7833.3,
+      avg_buffer_mw: 1833.3,
+      mae_mw: 1500,
+      bias_mw: 500,
+      max_shortfall_mw: 3000,
+      max_shortfall_at: t(1),
+      firm_hours_kept: 2,
+      firm_hours_total: 3,
+    },
+    buffers: {
+      method: 'conditional_lodo',
+      confidence: 0.9,
+      simple_buffer_mw: 2000,
+      bins: [
+        { forecast_from_mw: 0, forecast_to_mw: null, buffer_mw: 2000, n: 700, fallback: false },
+      ],
+    },
+    vintages: [
+      {
+        publish_time: '2026-01-13T22:30:00Z',
+        is_decision_run: false,
+        after_cutoff: false,
+        points: [{ t: t(0), mw: 11000 }],
+      },
+      {
+        publish_time: '2026-01-14T07:30:00Z',
+        is_decision_run: true,
+        after_cutoff: false,
+        points: [
+          { t: t(0), mw: 10000 },
+          { t: t(1), mw: 10000 },
+          { t: t(2), mw: 9000 },
+        ],
+      },
+      {
+        publish_time: '2026-01-14T09:30:00Z',
+        is_decision_run: false,
+        after_cutoff: true,
+        points: [{ t: t(0), mw: 9200 }],
+      },
+    ],
+    summary:
+      'At 09:20 on Wed 14 Jan, … Wind delivered 35 GWh, with the largest shortfall of 3.0 GW at 01:00.',
+    summary_trader:
+      'At 09:20 on Wed 14 Jan, the latest forecast (published 07:30) covered only 3 of 4 hours.',
+    ...overrides,
+  }
+}
+
+/** The value shown under a readout label, e.g. readoutValue('MAE') → "1,500 MW". */
+export function readoutValue(label: string): string {
+  const term = screen.getAllByRole('term').find((t) => t.textContent === label)
+  if (!term) throw new Error(`No readout labelled ${label}`)
+  const value = term.parentElement?.querySelector('dd')
+  return (value?.textContent ?? '').replace(/\s+/g, ' ').trim()
 }

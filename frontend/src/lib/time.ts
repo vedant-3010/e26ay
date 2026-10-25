@@ -108,3 +108,9 @@ export function utcIsoToUkLocal(iso: string): string {
 export function hoursBetween(from: Instant, to: Instant): number {
   return (toDate(to).getTime() - toDate(from).getTime()) / 3_600_000
 }
+
+/** `09:45` is valid; `09:10` or `25:00` is not (15-minute steps, PRD F1.2). */
+export function isQuarterHour(value: string): boolean {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value)
+  return Boolean(m && Number(m[2]) % 15 === 0)
+}

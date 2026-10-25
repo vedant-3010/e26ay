@@ -18,6 +18,14 @@ export function enumParam<const T extends string>(values: readonly T[], fallback
   }
 }
 
+/** Like `enumParam`, but `null` when absent or invalid (the page supplies the default). */
+export function nullableEnumParam<const T extends string>(values: readonly T[]): Param<T | null> {
+  return {
+    parse: (raw) => ((values as readonly string[]).includes(raw ?? '') ? (raw as T) : null),
+    serialize: (v) => v,
+  }
+}
+
 export function numberParam(
   fallback: number,
   { min, max, step }: { min: number; max: number; step?: number },
