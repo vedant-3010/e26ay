@@ -11,7 +11,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 2 Analytics core | ✅ done | ~1.25 h | 99.5% analytics coverage; store loads in ~257 ms; calibration within ±5 pp |
 | 3 Notebook + insights | ✅ done | ~0.75 h | Notebook executed with outputs; `INSIGHTS.md` written by it; alignment check changes nothing |
 | 4 API | ✅ done | ~1.0 h | 5 endpoints; 54 API tests + 15 API contract tests; cold ≤ 36 ms, warm ≈ 1 ms |
-| 5 Frontend + Monitor | ⬜ | | |
+| 5 Frontend + Monitor | ✅ done | ~1.5 h | All PRD F2 ACs pass; 366 KB gz JS total (129 KB shell); no overflow at 375 px |
 | 6 Decision Desk | ⬜ | | |
 | 7 Accuracy Lab + Methodology | ⬜ | | |
 | 8 Polish + release | ⬜ | | |
@@ -36,6 +36,41 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 5: Frontend foundation and Forecast Monitor ✅
+- **Built:**
+  - API layer: `api/client.ts` exports typed payloads and `ApiError`, which carries the envelope message. `api/queries.ts` has `useMeta`/`useMonitor`/`useDecision`/`useAccuracy` with `staleTime: Infinity` and `keepPreviousData`, and never retries a 422.
+  - `lib/format.ts`: MW/GW/GWh/%/h formatting, with a real minus sign and `—` for missing values.
+  - `lib/time.ts`: UK formatting through `Intl` in Europe/London, and UK wall-clock ↔ UTC conversion that is correct across BST and clock changes.
+  - `lib/urlState.ts`: typed URL state; defaults are left out of links.
+  - `lib/csv.ts` (RFC 4180) and `lib/glossary.ts` (InfoTip copy from the PRD).
+  - Charts:
+    - `charts/echarts.ts`: modular registration; ECharts' `use` is aliased so the hooks lint rule doesn't mistake it for React's.
+    - `EChart.tsx`: init/dispose, ResizeObserver, `aria-label`.
+    - `theme.ts`: CSS tokens read at runtime; follows the theme switch.
+    - `monitorOption.ts`: a pure option builder.
+  - Components: `InfoTip` (a popover, so it works by tap and keyboard), `ErrorState`/`EmptyState`/`LoadingBar`, `KpiCard`, `MetricsStrip`, `SegmentedControl` (a real radiogroup), `HorizonSlider` (0–48 h in 0.5 h steps, tick labels, the "15–40 h" hint, a 150 ms timer debounce, and the thumb's aria label and value text), and `DateTimeRange` (native `datetime-local` in UK time, presets, inline validation).
+  - **Monitor page:** URL state (`start`, `end`, `horizon`), with defaults and bounds taken from `/api/meta` so they are not duplicated in the frontend. Metrics strip, coverage indicator with explanation, CSV download, chart, skeleton and error states; while refetching, the previous render stays visible at 60% opacity with a top progress bar. Pages are lazy-loaded.
+- **Dataviz pass** (the dataviz skill's method was applied):
+  - Palette validated with its script. Light passes as specified. **Dark-mode tokens changed** to `#3B82F6 / #16A34A / #D97706 / #64748B`, because the UI_SPEC pastels failed the dark lightness band (UI_SPEC §1 updated with the evidence).
+  - No dual axes: the Monitor is two grids on a shared time axis. Phase 7's "buffer by level" is redesigned in UI_SPEC §4 to avoid the second axis.
+  - Charts have a legend for two or more series, 2 px lines, a solid hairline grid and crosshair, one tooltip with every value at that time (values lead, labels follow, line keys), and text in text tokens.
+- **PRD F2 acceptance criteria:**
+  - [x] 1. Start/end pickers are bounded by `/api/meta`, default 2–9 Jan, max span 35 days (the data spans 32), validated before any request.
+  - [x] 2. Horizon slider 0–48 h, 0.5 h steps, default 24 h; latest forecast ≥ H before each hour (API, contract-tested in Phase 4).
+  - [x] 3. Actual (blue, half-hourly) and forecast (green, hourly) with zoom/pan, plus a synchronised error panel (shortfall amber, surplus slate).
+  - [x] 4. Tooltip: UK time, actual, forecast, signed error with shortfall/surplus, the run's publish time, and the exact lead.
+  - [x] 5. Metrics strip: n, MAE, RMSE, bias, P90 |error|, P90 shortfall, WAPE.
+  - [x] 6. Coverage indicator ("Forecast available for 87.5% of hours" at 46 h), with an explanation below 100%.
+  - F6 (Should): URL state for the whole view and CSV download.
+- **Checks:**
+  - `make check` ✅: 293 pytest (99.66% analytics coverage), **49 Vitest** (format, time incl. BST, URL state, CSV, option builder, CSV export and range rules, slider debounce, Monitor page flows, app shell), lint and types clean.
+  - **JS 366 KB gzipped in total** (budget 450): shell 129 KB, Monitor + ECharts 236 KB.
+  - Real browser (Chrome via DevTools protocol, served by FastAPI from `frontend/dist`): checked at 1280 px light/dark and at a true 375 px; `scrollWidth` equals the viewport (no horizontal scroll); no console errors; screenshots reviewed. Five fixes followed: axis names vs legend overlap, tick wrapping, half-hour tooltip context, solid crosshair, label ids.
+- **Notes:**
+  - Native date-time inputs follow the browser locale (UK users see `02/01/2026, 00:00`).
+  - ECharts ticks use UTC boundaries with UK labels (equal in January); `lib/time` handles BST everywhere else.
+  - The Vercel deploy is still pending team-access approval.
 
 ### 2026-10-26 — Phase 4: API ✅
 - **Built:**

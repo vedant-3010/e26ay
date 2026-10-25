@@ -9,14 +9,16 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 
 | Token | Light | Dark | Used for |
 |---|---|---|---|
-| `--actual` | `#2563EB` | `#60A5FA` | Actual generation (always blue) |
-| `--forecast` | `#16A34A` | `#4ADE80` | Forecast (always green) |
-| `--firm` | `#16A34A` @ 18% | `#4ADE80` @ 18% | Firm-wind band |
-| `--shortfall` | `#D97706` | `#FBBF24` | Over-forecast / shortfall |
-| `--shortfall-severe` | `#DC2626` | `#F87171` | Errors beyond P90 |
-| `--surplus` | `#64748B` | `#94A3B8` | Under-forecast / surplus |
+| `--actual` | `#2563EB` | `#3B82F6` | Actual generation (always blue) |
+| `--forecast` | `#16A34A` | `#16A34A` | Forecast (always green) |
+| `--firm` | `#16A34A` @ 18% | `#16A34A` @ 18% | Firm-wind band |
+| `--shortfall` | `#D97706` | `#D97706` | Over-forecast / shortfall |
+| `--shortfall-severe` | `#DC2626` | `#DC2626` | Errors beyond P90 |
+| `--surplus` | `#64748B` | `#64748B` | Under-forecast / surplus |
 | `--cutoff` | `#334155` dashed | `#CBD5E1` dashed | Decision cutoff marker |
 | neutrals | slate scale | slate scale | Surfaces, text, grid |
+
+> **Phase 5 change (validated):** the dark values above replace the original 400-level pastels (`#60A5FA`, `#4ADE80`, `#FBBF24`, `#94A3B8`, …). Run through the dataviz palette validator against the real dark surfaces (slate-900/950), those were too light for chart marks (dark lightness band L 0.48–0.67). The chosen set passes the lightness band, chroma floor, CVD separation (actual↔forecast deutan ΔE 27.5; actual↔shortfall protan ΔE 30.2) and ≥ 3:1 contrast. Light mode passes unchanged (actual↔forecast deutan ΔE 30.3). Surplus slate is deliberately low-chroma: shortfall is the emphasised pole, surplus the greyed one, and the bar's side of zero also encodes the sign.
 
 - Surfaces are flat, with 1px borders and 8px radius. There are no gradients and no drop shadows except on popovers.
 - **Density:** 14px base text; KPI values 28px mono; 24px section spacing; max content width 1280px.
@@ -120,10 +122,10 @@ Long-form, readable page with a max width of 760px and anchored sections: Data s
 |---|---|---|---|---|
 | Decision main | line + area band | time (UK) | MW | Band = stacked areas (firm baseline transparent + (forecast−firm) filled `--firm`). Shortfall fill via `areaStyle` between the actual and forecast series, or a custom series. Vertical markLine at day boundaries. |
 | Vintages | multi-line | time | MW | Up to 16 runs; color ramp from neutral-300 to neutral-500, decision run `--forecast` at 3px, after-cutoff runs dashed. Legend: "Earlier runs · Decision run · Later runs (not available)". |
-| Monitor | 2 grids | time | MW / error MW | `dataZoom` inside + slider; `connectNulls: false`; forecast symbols every hour (size 3). |
+| Monitor | 2 grids | time | MW / error MW | Two stacked grids on one shared time axis (small multiples, not a dual axis); `dataZoom` inside + slider linked to both; one crosshair (solid hairline) and one tooltip listing every value at that time; `connectNulls: false`; forecast symbols every hour (size 5, surface ring). Axis names run vertically beside each axis. At a half-hour the tooltip also shows that hour's forecast. Ticks use UTC (`useUTC`), labels UK time (equal in January). |
 | Lead curve | line | lead h | MW | `markArea` for the decision window; tooltip shows n. |
 | Distribution | bar (histogram) | error MW | count | markLines at P10/P50/P90; bars right of 0 tinted `--shortfall`. |
-| Buffer by level | grouped bar + scatter | forecast bin | MW / % (2nd axis) | Target line at the chosen confidence. |
+| Buffer by level | grouped bar, plus a separate achieved-% strip | forecast bin | MW (bars) · % (strip, its own axis) | **No dual axis** (dataviz rule: two scales on one plot invent correlations). Bars show P80/P90/P95 shortfall in MW; achieved % sits in a small aligned chart or row below, with the target line at the chosen confidence. |
 | By hour | bar + line | hour UK | MW | Bars MAE, line bias. |
 | Daily | bar + line | date | MW | Clickable bars navigate to Decision Desk. |
 

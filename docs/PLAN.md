@@ -118,12 +118,12 @@ Three pitch sentences: …
 
 ## Phase 5 — Frontend foundation and Forecast Monitor
 
-- [ ] 5.1 `api/client.ts` (openapi-fetch) and `api/queries.ts` (TanStack hooks; `staleTime: Infinity`, `keepPreviousData`).
-- [ ] 5.2 `lib/format.ts`, `lib/time.ts`, `lib/urlState.ts`, `lib/csv.ts`, with Vitest tests.
-- [ ] 5.3 `components/charts/EChart.tsx` wrapper + `theme.ts` (light/dark, tokens). Use modular ECharts imports.
-- [ ] 5.4 Shared components: KpiCard, MetricsStrip, InfoTip, Skeleton, ErrorState, EmptyState, ThemeToggle.
-- [ ] 5.5 Controls: DateRangePicker (bounded by meta), HorizonSlider (debounced).
-- [ ] 5.6 **Monitor page** per UI_SPEC §3.2 and PRD F2 (all ACs), including coverage and CSV.
+- [x] 5.1 `api/client.ts` (openapi-fetch) and `api/queries.ts` (TanStack hooks; `staleTime: Infinity`, `keepPreviousData`).
+- [x] 5.2 `lib/format.ts`, `lib/time.ts`, `lib/urlState.ts`, `lib/csv.ts`, with Vitest tests.
+- [x] 5.3 `components/charts/EChart.tsx` wrapper + `theme.ts` (light/dark, tokens). Use modular ECharts imports.
+- [x] 5.4 Shared components: KpiCard, MetricsStrip, InfoTip, Skeleton, ErrorState, EmptyState, ThemeToggle.
+- [x] 5.5 Controls: DateRangePicker (bounded by meta), HorizonSlider (debounced).
+- [x] 5.6 **Monitor page** per UI_SPEC §3.2 and PRD F2 (all ACs), including coverage and CSV.
 
 **DoD:** PRD F2 ACs all pass (check them off in `PROGRESS.md`) · `npm run build` < 450 KB gzipped JS · works at 375px width.
 
