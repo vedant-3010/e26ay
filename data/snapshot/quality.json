@@ -1,0 +1,126 @@
+{
+  "checks": [
+    {
+      "details": {
+        "unexpected": {}
+      },
+      "id": "runs_per_day",
+      "message": "8 runs on every one of 34 publish days",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "histogram": {
+          "73": 272
+        },
+        "unexpected": {}
+      },
+      "id": "rows_per_run",
+      "message": "73 hourly points in every one of 272 runs",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "nominal_utc": [
+          "02:30",
+          "04:30",
+          "07:30",
+          "09:30",
+          "11:30",
+          "15:30",
+          "18:30",
+          "22:30"
+        ],
+        "observed_utc": [
+          "02:30",
+          "04:30",
+          "07:30",
+          "09:30",
+          "11:30",
+          "12:25",
+          "15:30",
+          "18:30",
+          "22:30"
+        ],
+        "off_schedule": [
+          "2026-01-15T12:25:00Z"
+        ]
+      },
+      "id": "run_times",
+      "message": "1 run(s) off the nominal schedule: 2026-01-15T12:25:00Z",
+      "status": "warn"
+    },
+    {
+      "details": {
+        "dropped_negative_lead": 4081,
+        "dropped_outside_window": 928,
+        "duplicates_removed": 0,
+        "negative_values": 0,
+        "null_values": 0,
+        "raw_rows": 19856
+      },
+      "id": "forecast_values",
+      "message": "No null or negative forecast values",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "max_h": 66.5,
+        "min_h": 0.5,
+        "off_grid_rows": 57
+      },
+      "id": "lead_range",
+      "message": "Lead times 0.5\u201366.5 h; 57 rows from off-schedule runs are not on the k + 0.5 h grid",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "missing_periods": [],
+        "unexpected": {}
+      },
+      "id": "periods_per_day",
+      "message": "All half-hourly periods present on 32 settlement days",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "dropped_outside_window": 0,
+        "duplicates_removed": 0,
+        "negative_values": 0,
+        "null_values": 0,
+        "raw_rows": 1536
+      },
+      "id": "actual_values",
+      "message": "No null or negative actual values",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "partial": {}
+      },
+      "id": "decision_coverage_epex",
+      "message": "EPEX SPOT GB Day-Ahead (09:20): the decision run covers all hours on every one of 31 days",
+      "status": "ok"
+    },
+    {
+      "details": {
+        "partial": {}
+      },
+      "id": "decision_coverage_n2ex",
+      "message": "Nord Pool N2EX Day-Ahead (09:50): the decision run covers all hours on every one of 31 days",
+      "status": "ok"
+    }
+  ],
+  "status": "warn",
+  "summary": {
+    "actual_duplicates_removed": 0,
+    "actual_rows": 1536,
+    "delivery_from": "2026-01-02",
+    "delivery_to": "2026-02-01",
+    "forecast_duplicates_removed": 0,
+    "forecast_rows": 14847,
+    "forecast_runs": 272,
+    "target_from": "2026-01-01T00:00:00Z",
+    "target_to_exclusive": "2026-02-02T00:00:00Z"
+  }
+}

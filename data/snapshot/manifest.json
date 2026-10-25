@@ -1,0 +1,46 @@
+{
+  "created_at": "2026-10-25T20:46:50Z",
+  "fetch": {
+    "base_url": "https://data.elexon.co.uk/bmrs/api/v1",
+    "chunks": {
+      "FUELHH": 5,
+      "WINDFOR": 34
+    },
+    "example_urls": {
+      "FUELHH": "https://data.elexon.co.uk/bmrs/api/v1/datasets/FUELHH/stream?settlementDateFrom=2026-01-01&settlementDateTo=2026-01-07&fuelType=WIND",
+      "WINDFOR": "https://data.elexon.co.uk/bmrs/api/v1/datasets/WINDFOR/stream?publishDateTimeFrom=2025-12-30T00%3A00%3A00Z&publishDateTimeTo=2025-12-31T00%3A00%3A00Z"
+    },
+    "fuelhh_settlement_days": [
+      "2026-01-01",
+      "2026-02-01"
+    ],
+    "windfor_publish_days": [
+      "2025-12-30",
+      "2026-02-01"
+    ]
+  },
+  "files": {
+    "actuals.parquet": "f6255c55bf50ce26af2468f1e54b53e58eaaa4a7cb4222dbfa796ade8f5d506e",
+    "forecasts.parquet": "52fe5fef0c37c02c088286781b08b84132470c9e0803c58f189ca87eafba090b"
+  },
+  "quality_status": "warn",
+  "rows": {
+    "actuals": 1536,
+    "forecasts": 14847
+  },
+  "snapshot_id": "ac22a4140bca",
+  "sources": {
+    "FUELHH": {
+      "description": "Actual generation by fuel type, half-hourly (fuelType=WIND)",
+      "docs": "https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH/stream"
+    },
+    "WINDFOR": {
+      "description": "National wind generation forecast runs, hourly",
+      "docs": "https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR/stream"
+    }
+  },
+  "window": {
+    "target_from": "2026-01-01T00:00:00Z",
+    "target_to_exclusive": "2026-02-02T00:00:00Z"
+  }
+}
