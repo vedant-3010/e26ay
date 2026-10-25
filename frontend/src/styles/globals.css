@@ -88,11 +88,13 @@
 }
 
 .dark {
-  --actual: #60a5fa;
-  --forecast: #4ade80;
-  --shortfall: #fbbf24;
-  --shortfall-severe: #f87171;
-  --surplus: #94a3b8;
+  /* Validated with the dataviz palette checker on slate-900/950 (dark band L 0.48–0.67,
+     deutan ΔE ≥ 27): the UI_SPEC 400-level pastels were too light for chart marks. */
+  --actual: #3b82f6;
+  --forecast: #16a34a;
+  --shortfall: #d97706;
+  --shortfall-severe: #dc2626;
+  --surplus: #64748b;
   --cutoff: #cbd5e1;
 
   --background: #020617; /* slate-950 */
@@ -130,6 +132,15 @@
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes loading-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
   }
 }
 
