@@ -6,8 +6,8 @@ Claude Code updates this file at the end of every phase (and whenever something 
 
 | Phase | Status | Time used | Notes |
 |---|---|---|---|
-| 0 Walking skeleton | 🟨 in progress | ~1.0 h | Local, Docker and `make check` all green. Waiting on 👤: GitHub repo, Vercel import, commit approval |
-| 1 Data snapshot | ⬜ | | |
+| 0 Walking skeleton | 🟨 in progress | ~1.1 h | Local, Docker and CI green. Only remaining DoD item: 👤 Vercel import + production URL checks |
+| 1 Data snapshot | ✅ done | ~1.0 h | Snapshot `ac22a4140bca`; 13 contract tests pass; started while Phase 0 waits on Vercel (human said continue) |
 | 2 Analytics core | ⬜ | | |
 | 3 Notebook + insights | ⬜ | | |
 | 4 API | ⬜ | | |
@@ -20,18 +20,48 @@ Claude Code updates this file at the end of every phase (and whenever something 
 Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Links
-- Repo: _(pending: public GitHub repo `e26ay`)_
+- Repo: https://github.com/vedant-3010/e26ay (public)
 - Production URL: _(pending: Vercel import)_
 - Video: _(fill in)_
 
 ## Waiting on the human 👤
-1. **Approve the Phase 0 commits.** The human asked to approve every commit. Commit messages carry no AI attribution.
-2. **Create the public GitHub repo `e26ay` and push**: `gh repo create e26ay --public --source . --push`, or ask Claude Code to run it.
-3. **Import the repo into Vercel** (Hobby, vercel.com/new). Framework preset: leave it as detected; `vercel.json` sets the build command. Paste back the production URL (`<project>.vercel.app`), plus the build log if the build fails.
-4. After that, Claude Code checks in a cold context: `curl -H 'Accept: text/html' <url>/` and `<url>/monitor` return the SPA, and `<url>/api/health` returns JSON. CI must also be green on GitHub.
+1. **Import the repo into Vercel** (Hobby, vercel.com/new → `vedant-3010/e26ay`). Leave the framework preset as detected; `vercel.json` sets the build command. Paste back the production URL (`<project>.vercel.app`), plus the build log if the build fails. As of 2026-10-26 no Vercel project for `e26ay` exists in the connected account.
+2. Then Claude Code checks in a cold context: `curl -H 'Accept: text/html' <url>/` and `<url>/monitor` return the SPA, and `<url>/api/health` returns JSON with `snapshot_id` = `ac22a4140bca`, which proves the snapshot is inside the function bundle.
+3. Commits are approved by the human one batch at a time (standing instruction).
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 1: Data ingestion and snapshot ✅
+- **Built:** `winddesk.ingest` with four parts.
+  - `client.py`: async httpx; WINDFOR in daily publish chunks and FUELHH in 7-day settlement chunks; retries on 429/5xx/transport errors with 1/2/4/8 s backoff; at most 4 concurrent requests; User-Agent `WindDesk-pilot/1.0`; verbatim raw cache in `data/raw/` (gitignored); `--offline` and `--refresh`.
+  - `normalize.py`: canonical tables, all timestamps `datetime64[ns, UTC]`, the DATA §3 dedupe rules, lead and window filters, nulls dropped and counted, nothing filled.
+  - `validate.py`: 9 checks into `quality.json`.
+  - `__main__.py`: CLI, deterministic parquet, `manifest.json` (snapshot id, per-file sha256, fetch params, row counts, sources). `created_at` is kept when the snapshot is unchanged.
+  - Pulled forward from Phase 2: `analytics/pilot.py` (windows and auction presets) and `analytics/timeutil.py` (PLAN 2.1, which ingest's coverage check needs; the layering allows it).
+- **Snapshot `ac22a4140bca`:** 272 runs / 14,847 forecast rows, 1,536 actuals (32 × 48), 115 KB of parquet. Fetching takes about 3 s.
+- **Checks:**
+  - `make check` ✅: **58 pytest** (ingest 95–100% lines, `timeutil` 97%, overall 95%), 11 Vitest, ruff, mypy and ESLint clean, build OK.
+  - `make test-contract` ✅: **13 passed**.
+  - `make ingest ARGS=--offline` reproduces `ac22a4140bca`, and the parquet, `manifest.json` and `quality.json` are byte-identical across rebuilds.
+  - CI on GitHub: all 3 jobs green (run 40231780199) after pinning `setup-uv@v10.3.2`.
+- **quality.json: one `warn`, documented and accepted.**
+  - `run_times`: **on 15 Jan 2026 the 11:30 WINDFOR run was published at 12:25 UTC**. That day still has 8 runs, and the run has the normal 73-point window. It is kept as published; it is not a decision run for either auction.
+  - Its 57 kept rows have leads of k + 35/60 h, so `lead_range` reports them as information. The invariant `lead_h ≥ 0` holds.
+  - Every other check is `ok`: 8 runs on every publish day, 73 points in every run, no nulls, negatives or duplicates, all 1,536 settlement periods present, and **full 24 h decision coverage for EPEX and N2EX on all 31 delivery days**.
+- **Verified facts written to DATA §1.2:**
+  - The EPEX decision run is always D−1 07:30 (16.5–39.5 h); N2EX is always D−1 09:30 (14.5–37.5 h).
+  - Every run spans (P−1) 21:00 to (P+2) 21:00, so kept leads run 0.5–66.5 h.
+  - `publishDateTimeTo` is inclusive.
+  - FUELHH has no revisions: 4 periods were published late, each appearing once.
+- **Doc changes:**
+  - DATA §1.2: verified facts.
+  - DATA §4: pandas 3 parses to `us`, so convert through `as_utc` to `ns`.
+  - **DATA §5.6: lead-curve bins use `floor(lead_h/bin_h)` labelled by midpoint, not exact lead values**, because of the late run.
+  - DATA §6: real row counts.
+  - API.md `/meta` example: real row counts, and `run_times_utc` = the nominal schedule.
+  - pyproject: ruff allows `–`/`−` in strings (typographic copy).
+- **Follow-ups for Phase 2:** have `ingest.validate`'s coverage check call `analytics.selection.select_decision_run` once it exists (today it carries a 5-line equivalent with a no-look-ahead filter); lead-curve binning per the new §5.6; `/api/meta` should report the nominal run times plus the off-schedule list.
 
 ### 2026-10-26 — Phase 0: Walking skeleton (local + Docker done; deploy pending)
 - **Bootstrap:** ran `setup.sh` with `GIT_CONFIG_GLOBAL=/dev/null` so it **staged but did not commit** (the human wants to approve every commit). Repo folder: `e26ay/`.

@@ -47,14 +47,14 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 
 ## Phase 1 — Data ingestion and snapshot
 
-- [ ] 1.1 `ingest/client.py`: httpx client, daily chunks, retries/backoff, concurrency 4, raw cache (DATA §3).
-- [ ] 1.2 `ingest/normalize.py`: canonical tables (DATA §4), tz-aware UTC, dedupe rules, lead filter.
-- [ ] 1.3 `ingest/validate.py`: every check in DATA §3 step 6, written to `quality.json`.
-- [ ] 1.4 `ingest/__main__.py`: CLI `--start --end --offline --refresh`; writes parquet + `manifest.json`. Add `make ingest`.
-- [ ] 1.5 Run the full ingest (DATA §2 windows). Read `quality.json` carefully. Any `warn` gets a note in `PROGRESS.md`.
-- [ ] 1.6 Contract tests (`tests/contract/`, marker `snapshot`) per DATA §7 item 14.
-- [ ] 1.7 Update DATA §1.2 with **verified** facts for the whole window (runs/day, run times, rows/run, lead range). Correct anything that differed from the sampled days.
-- [ ] 1.8 Commit `data/snapshot/*` (check `data/raw/` is gitignored).
+- [x] 1.1 `ingest/client.py`: httpx client, daily chunks, retries/backoff, concurrency 4, raw cache (DATA §3).
+- [x] 1.2 `ingest/normalize.py`: canonical tables (DATA §4), tz-aware UTC, dedupe rules, lead filter.
+- [x] 1.3 `ingest/validate.py`: every check in DATA §3 step 6, written to `quality.json`.
+- [x] 1.4 `ingest/__main__.py`: CLI `--start --end --offline --refresh`; writes parquet + `manifest.json`. Add `make ingest`.
+- [x] 1.5 Run the full ingest (DATA §2 windows). Read `quality.json` carefully. Any `warn` gets a note in `PROGRESS.md`.
+- [x] 1.6 Contract tests (`tests/contract/`, marker `snapshot`) per DATA §7 item 14.
+- [x] 1.7 Update DATA §1.2 with **verified** facts for the whole window (runs/day, run times, rows/run, lead range). Correct anything that differed from the sampled days.
+- [x] 1.8 Commit `data/snapshot/*` (check `data/raw/` is gitignored).
 
 **DoD:** `make ingest` is reproducible (`--offline` rebuild gives an identical `snapshot_id`) · contract tests pass · snapshot committed.
 
@@ -62,7 +62,7 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 
 ## Phase 2 — Analytics core
 
-- [ ] 2.1 `analytics/timeutil.py`: `LONDON`, `decision_cutoff_utc`, `delivery_day_targets`, `to_uk_label`.
+- [x] 2.1 `analytics/timeutil.py`: `LONDON`, `decision_cutoff_utc`, `delivery_day_targets`, `to_uk_label`.
 - [ ] 2.2 `analytics/selection.py`: `select_at_horizon`, `select_decision_run`, `vintages_for_day`.
 - [ ] 2.3 `analytics/metrics.py`: `compute_metrics(pairs) -> Metrics` dataclass.
 - [ ] 2.4 `analytics/buffers.py`: simple + conditional LODO buffers, `firm_wind`, `calibration`.

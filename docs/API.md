@@ -39,7 +39,7 @@ Everything the UI needs to bootstrap: bounds, presets, defaults and the data-qua
     "delivery_from": "2026-01-02", "delivery_to": "2026-02-01"
   },
   "forecast_runs": {"count": 272, "run_times_utc": ["02:30","04:30","07:30","09:30","11:30","15:30","18:30","22:30"]},
-  "rows": {"actuals": 1536, "forecasts": 17000},
+  "rows": {"actuals": 1536, "forecasts": 14847},
   "auctions": [
     {"id": "epex", "label": "EPEX SPOT GB Day-Ahead", "cutoff_local": "09:20"},
     {"id": "n2ex", "label": "Nord Pool N2EX Day-Ahead", "cutoff_local": "09:50"}
@@ -51,6 +51,7 @@ Everything the UI needs to bootstrap: bounds, presets, defaults and the data-qua
   "quality": {"status": "ok", "checks": [{"id": "runs_per_day", "status": "ok", "message": "8 runs on every day"}]}
 }
 ```
+`forecast_runs.run_times_utc` is the **nominal** schedule. Runs published at other times (in the pilot, one: 2026-01-15 12:25 UTC) are listed by the `run_times` quality check (DATA §1.2). `rows` and `forecast_runs.count` above are the real Phase 1 snapshot figures.
 
 ## `GET /api/monitor`
 Actual vs forecast at a fixed horizon (DATA §5.1).

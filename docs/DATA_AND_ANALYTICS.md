@@ -37,17 +37,19 @@ GET /datasets/WINDFOR/stream?publishDateTimeFrom=2026-01-05T09:00:00Z&publishDat
 Observed response: JSON array. Sample record:
 `{"dataset":"WINDFOR","publishTime":"2026-01-05T09:30:00Z","startTime":"2026-01-07T21:00:00Z","generation":8009}`
 
-Observed behaviour (on 5 Jan and 14 Jan 2026):
+Behaviour **verified across the whole fetch window in Phase 1** (publish days 2025-12-30 … 2026-02-01, i.e. 34 days and 272 runs; snapshot `ac22a4140bca`, 2026-10-26). It is asserted by `backend/tests/contract/test_snapshot.py`:
 
 - **Resolution:** hourly (`startTime` on the hour).
-- **Cadence:** 8 runs per day, published at **02:30, 04:30, 07:30, 09:30, 11:30, 15:30, 18:30, 22:30 UTC**.
-- **Window:** every run published on calendar day P contains **73 hourly points from (P−1) 21:00 to (P+2) 21:00 UTC**. This window includes hours already in the past at publish time, which are dropped (lead < 0).
+- **Cadence:** **8 runs on every one of the 34 publish days**, at the nominal times **02:30, 04:30, 07:30, 09:30, 11:30, 15:30, 18:30, 22:30 UTC**.
+  - **One exception:** on **15 Jan 2026 the 11:30 run was published at 12:25 UTC** (55 min late). That day still has 8 runs. The run is kept as published; `quality.json` reports it under `run_times` (status `warn`). It does not affect any decision run (both cutoffs fall before 11:30).
+- **Window:** every run published on calendar day P, the late one included, contains **73 hourly points from (P−1) 21:00 to (P+2) 21:00 UTC** (272 of 272 runs). This window includes hours already in the past at publish time, which are dropped (lead < 0).
 - Consequences:
-  - Max lead time of a run = (P+2) 21:00 − publish time: 66.5 h for the 02:30 run, 46.5 h for the 22:30 run.
-  - Lead times are always **k + 0.5 h**, because runs publish at :30 and targets are on the hour.
-  - A run published on D−1 covers the whole of delivery day D.
+  - Max lead time of a run = (P+2) 21:00 − publish time: 66.5 h for the 02:30 run, 46.5 h for the 22:30 run. Kept leads span **0.5–66.5 h**.
+  - Lead times are **k + 0.5 h for nominal runs**, because they publish at :30 and targets are on the hour. The 12:25 run's 57 kept rows have leads of **k + 35/60 h** (0.58, 1.58, …). Code must not assume the half-hour grid (see §5.6).
+  - A run published on D−1 covers the whole of delivery day D. The **EPEX decision run is the D−1 07:30 run (16.5–39.5 h ahead), and the N2EX decision run is the D−1 09:30 run (14.5–37.5 h ahead), on all 31 delivery days.** Both presets have full 24-hour coverage every day.
+- API behaviour: `publishDateTimeTo` is **inclusive**. A run exactly on a chunk boundary would appear in two daily chunks; ingest de-duplicates it.
 
-> ⚠️ These are observations from two sample days. **Phase 1 must assert them across the whole pilot window** (data-contract tests) and update this section if anything differs, for example a missing run or a different count.
+FUELHH over settlement days 2026-01-01 … 2026-02-01: **1,536 records = 32 × 48**, no missing periods, no duplicate `startTime`, no nulls or negative values. `publishTime` is `startTime + 30 min` for 1,532 records. Four were published 56–145 min after `startTime`, but each half-hour still appears only once. Generation ranges from 1,695 to 17,805 MW; forecasts range from 2,292 to 21,353 MW.
 
 ### 1.3 Coverage note
 Both datasets are national-level wind as published by Elexon. FUELHH reports transmission-metered generation, so embedded (distribution-connected) wind is not visible. Confirm against Elexon's dataset descriptions and state it on the Methodology page.
@@ -102,7 +104,7 @@ The snapshot (well under 1 MB) **is committed to git**. This keeps the demo dete
 
 ## 4. Canonical tables
 
-All timestamps are `datetime64[ns, UTC]`. Ensure every timestamp column uses the **same unit and timezone** before any `merge_asof` (pandas raises otherwise).
+All timestamps are `datetime64[ns, UTC]`. Ensure every timestamp column uses the **same unit and timezone** before any `merge_asof` (pandas raises otherwise). Note that pandas 3 parses strings to **microseconds** (`datetime64[us, UTC]`) by default. Always convert through `analytics.timeutil.as_utc`, and use `decision_cutoff_utc` and `delivery_day_targets`, which return `ns`.
 
 **actuals**
 | column | dtype | note |
@@ -201,7 +203,7 @@ where `e = forecast_mw − actual_mw`. Use `numpy.quantile(..., method="linear")
 ### 5.6 Error vs lead time (lead curve)
 
 - Population: **all pairs** (every run × every target it covers) with target in the delivery window and `0 ≤ lead_h ≤ 48`.
-- Group by lead bin. With `bin_h = 1` each bin is one exact lead value (0.5, 1.5, …, 47.5). With `bin_h = 3`, bins are [0,3), [3,6), …
+- Group by lead bin `[k·bin_h, (k+1)·bin_h)`, i.e. `floor(lead_h / bin_h)`. Label a bin by its midpoint, so with `bin_h = 1` the labels are 0.5, 1.5, …, 47.5 (each nominal run contributes exactly that lead), and with `bin_h = 3` the bins are [0,3), [3,6), … Do **not** group on the exact lead value: the 15 Jan 12:25 run has leads of k + 0.58 h (§1.2), which fall in bin [k, k+1).
 - Per bin: `n, mae, rmse, bias, p50_abs, p90_abs, p99_abs`.
 - This is a different population from §5.1 (exact lead rather than "at least H"). Label the chart "error by actual lead time".
 
@@ -256,7 +258,7 @@ Runs with `publish_time ∈ [D_start − 48 h, D_start)` (UK day start). For eac
 
 ## 6. Performance model
 
-- About 17k forecast rows, about 1.5k actuals, about 15k pairs. Load at startup in under 1 s.
+- 14,847 forecast rows (272 runs) and 1,536 actuals in the Phase 1 snapshot (about 115 KB of Parquet in total), so about 14.8k pairs. Load at startup in under 1 s.
 - Precompute at startup: `pairs_all`, the decision pools for both presets, calibration for each preset × c, and the lead curves (bin 1 h and 3 h).
 - Per-request computation (`select_at_horizon` over ≤ 840 hourly targets, plus metrics) takes under 30 ms. Wrap service calls in `functools.lru_cache(maxsize=256)` keyed by normalized primitive params.
 - Responses are deterministic for a given snapshot. The API sets `Cache-Control: public, max-age=300, s-maxage=86400` and an `ETag` of `snapshot_id` plus the normalized query (see API.md).
