@@ -1,0 +1,44 @@
+# docker compose up --build                         → full app (prod image) on http://localhost:8000
+# docker compose --profile dev up api-dev web-dev   → hot reload: API :8000 + Vite :5173
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_SHA: ${GIT_SHA:-local}
+    image: winddesk:latest
+    ports:
+      - "8000:8000"
+    environment:
+      WINDDESK_LOG_LEVEL: ${WINDDESK_LOG_LEVEL:-INFO}
+
+  api-dev:
+    profiles: [dev]
+    image: ghcr.io/astral-sh/uv:0.12.17-python3.12-trixie-slim
+    working_dir: /app
+    environment:
+      UV_PROJECT_ENVIRONMENT: /opt/venv # keep the Linux venv out of the bind-mounted repo
+      UV_LINK_MODE: copy
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "uv sync --frozen &&
+             uv run uvicorn winddesk.main:app --app-dir backend --host 0.0.0.0 --port 8000
+             --reload --reload-dir backend"
+
+  web-dev:
+    profiles: [dev]
+    image: node:22-slim
+    working_dir: /app/frontend
+    environment:
+      API_PROXY_TARGET: http://api-dev:8000
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules # container-only node_modules (Linux binaries)
+    ports:
+      - "5173:5173"
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - api-dev

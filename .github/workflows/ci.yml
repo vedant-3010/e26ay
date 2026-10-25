@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (ruff · mypy · pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.12.17"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - run: uv run pytest -m "not snapshot" --cov --cov-report=term
+      - name: Contract tests on the committed snapshot
+        if: hashFiles('data/snapshot/manifest.json') != ''
+        run: uv run pytest -m snapshot
+
+  frontend:
+    name: Frontend (eslint · tsc · vitest · build · API types)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.12.17"
+          enable-cache: true
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run lint
+      - run: npm --prefix frontend run typecheck
+      - run: npm --prefix frontend test
+      - run: npm --prefix frontend run build
+      - name: Generated API types are up to date
+        run: |
+          uv sync --frozen
+          make gen-api-check
+
+  docker:
+    name: Docker image (build · run · smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build --build-arg GIT_SHA=${GITHUB_SHA::7} -t winddesk:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name winddesk -p 8000:8000 winddesk:ci
+          for i in $(seq 1 30); do curl -sf localhost:8000/api/health && break; sleep 1; done
+          echo
+          curl -sf localhost:8000/api/health | grep -q '"status":"ok"'
+          curl -sf -H 'Accept: text/html' localhost:8000/ | grep -q 'id="root"'
+          curl -sf -H 'Accept: text/html' localhost:8000/monitor | grep -q 'id="root"'
+      - if: always()
+        run: docker logs winddesk || true

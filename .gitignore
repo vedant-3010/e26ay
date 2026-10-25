@@ -29,3 +29,6 @@ data/raw/
 .vercel/
 .DS_Store
 *.log
+
+# Local caches (OpenAPI export, logs)
+.cache/
