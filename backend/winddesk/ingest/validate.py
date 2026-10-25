@@ -10,9 +10,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Any, Literal
 
-import pandas as pd
-
 from ..analytics.pilot import AuctionPreset
+from ..analytics.selection import select_decision_run
 from ..analytics.timeutil import decision_cutoff_utc, delivery_day_targets, utc_iso
 from .normalize import NormalizedActuals, NormalizedForecasts
 
@@ -175,23 +174,18 @@ def check_actual_values(ac: NormalizedActuals) -> Check:
 def check_decision_coverage(
     fc: NormalizedForecasts, delivery_days: Sequence[date], preset: AuctionPreset
 ) -> Check:
-    """For each delivery day: does the latest run published at or before the cutoff cover
-    every hour of the day? Only runs published by the cutoff are considered (no look-ahead)."""
-    frame = fc.frame
-    run_times = pd.Series(sorted(frame["publish_time"].unique()))
+    """For each delivery day: does the decision run (the latest published at or before the
+    cutoff, exactly as the app selects it) cover every hour of the day?"""
     partial: dict[str, dict[str, Any]] = {}
     for day in delivery_days:
-        cutoff = decision_cutoff_utc(day, preset.cutoff_local)
-        eligible = run_times[run_times <= cutoff]
-        targets = delivery_day_targets(day)
-        if eligible.empty:
-            partial[day.isoformat()] = {"run": None, "hours": 0, "of": len(targets)}
-            continue
-        run = eligible.iloc[-1]
-        covered = frame.loc[frame["publish_time"] == run, "target_time"]
-        n = int(targets.isin(covered).sum())
-        if n != len(targets):
-            partial[day.isoformat()] = {"run": utc_iso(run), "hours": n, "of": len(targets)}
+        run = select_decision_run(fc.frame, day, decision_cutoff_utc(day, preset.cutoff_local))
+        hours = len(run.points)
+        if run.partial:
+            partial[day.isoformat()] = {
+                "run": utc_iso(run.publish_time) if run.publish_time is not None else None,
+                "hours": hours - len(run.missing_hours),
+                "of": hours,
+            }
     label = f"{preset.label} ({preset.cutoff_local:%H:%M})"
     msg = (
         f"{label}: the decision run covers all hours on every one of {len(delivery_days)} days"
