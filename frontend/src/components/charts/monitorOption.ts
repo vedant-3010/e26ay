@@ -4,18 +4,11 @@ import type { MonitorData } from '@/api/client'
 import { fmtAxisMW, fmtHours, fmtMW, fmtSignedMW } from '@/lib/format'
 import { fmtUkDateTime, fmtUkDay, fmtUkTime } from '@/lib/time'
 
-import { axisLine, baseOption, MONO_FAMILY, splitLine, withAlpha, type ChartColors } from './theme'
+import type { LegendItem } from './ChartLegend'
+import { axisLine, baseOption, splitLine, withAlpha, type ChartColors } from './theme'
+import { axisTime, header, note, row } from './tooltip'
 
 const HOUR_MS = 3_600_000
-
-function lineKey(color: string, bar = false): string {
-  const size = bar ? 'width:8px;height:8px;border-radius:2px' : 'width:12px;height:2px'
-  return `<span style="display:inline-block;${size};background:${color};vertical-align:middle;margin-right:8px"></span>`
-}
-
-function row(color: string, value: string, label: string, bar = false): string {
-  return `<div style="display:flex;align-items:center;gap:2px;line-height:20px">${lineKey(color, bar)}<b style="font-family:${MONO_FAMILY};font-weight:600">${value}</b><span style="opacity:.7;margin-left:6px">${label}</span></div>`
-}
 
 /** Pure option builder (unit-tested): two grids sharing the time axis, linked zoom and crosshair. */
 export function buildMonitorOption(data: MonitorData, c: ChartColors): EChartsOption {
@@ -30,28 +23,25 @@ export function buildMonitorOption(data: MonitorData, c: ChartColors): EChartsOp
   })
 
   const tooltipFormatter = (raw: unknown): string => {
-    const first = (Array.isArray(raw) ? raw[0] : raw) as { axisValue?: number } | undefined
-    const t = Number(first?.axisValue)
+    const t = axisTime(raw)
     if (!Number.isFinite(t)) return ''
     const actual = actualAt.get(t)
     const fc = forecastAt.get(t)
-    const lines = [
-      `<div style="font-weight:600;margin-bottom:4px">${fmtUkDateTime(t)} <span style="opacity:.6;font-weight:400">UK</span></div>`,
-    ]
+    const lines = [header(t)]
     if (actual !== undefined) lines.push(row(c.actual, fmtMW(actual), 'actual'))
     if (fc) {
       lines.push(row(c.forecast, fmtMW(fc.mw), 'forecast'))
       if (fc.mw !== null && actual !== null && actual !== undefined) {
         const error = fc.mw - actual
         const label = error > 0 ? 'error · shortfall' : error < 0 ? 'error · surplus' : 'error'
-        lines.push(row(error > 0 ? c.shortfall : c.surplus, fmtSignedMW(error), label, true))
+        lines.push(row(error > 0 ? c.shortfall : c.surplus, fmtSignedMW(error), label, 'square'))
       }
       lines.push(
-        `<div style="margin-top:4px;opacity:.75">${
+        note(
           fc.publish_time
             ? `Run published ${fmtUkDateTime(fc.publish_time)} · ${fmtHours(fc.lead_h)} ahead`
-            : `No run published ≥ ${fmtHours(data.params.horizon_h)} before this hour`
-        }</div>`,
+            : `No run published ≥ ${fmtHours(data.params.horizon_h)} before this hour`,
+        ),
       )
     } else {
       // A half-hour period: show the hourly forecast it belongs to, for context (no error is
@@ -59,7 +49,7 @@ export function buildMonitorOption(data: MonitorData, c: ChartColors): EChartsOp
       const hourFc = forecastAt.get(t - (t % HOUR_MS))
       if (hourFc)
         lines.push(row(c.forecast, fmtMW(hourFc.mw), `forecast for ${fmtUkTime(hourFc.t)}`))
-      lines.push(`<div style="margin-top:4px;opacity:.75">Forecasts are hourly</div>`)
+      lines.push(note('Forecasts are hourly'))
     }
     return lines.join('')
   }
@@ -73,22 +63,10 @@ export function buildMonitorOption(data: MonitorData, c: ChartColors): EChartsOp
     ...baseOption(c),
     // Ticks at UTC boundaries; labels are formatted in UK time (equal in January).
     useUTC: true,
-    legend: {
-      top: 0,
-      right: 8,
-      itemWidth: 14,
-      itemHeight: 8,
-      textStyle: { color: c.muted },
-      data: [
-        { name: 'Actual' },
-        { name: 'Forecast' },
-        { name: 'Shortfall', icon: 'roundRect' },
-        { name: 'Surplus', icon: 'roundRect' },
-      ],
-    },
+    legend: { show: false }, // HTML legend (ChartLegend) above the canvas
     grid: [
-      { left: 64, right: 12, top: 32, height: '52%' },
-      { left: 64, right: 12, top: '69%', height: '15%' },
+      { left: 64, right: 12, top: 12, height: '56%' },
+      { left: 64, right: 12, top: '71%', height: '15%' },
     ],
     axisPointer: {
       link: [{ xAxisIndex: 'all' }],
@@ -210,3 +188,10 @@ export function buildMonitorOption(data: MonitorData, c: ChartColors): EChartsOp
     ],
   }
 }
+
+export const MONITOR_LEGEND: LegendItem[] = [
+  { label: 'Actual (half-hourly)', color: 'var(--actual)', kind: 'line' },
+  { label: 'Forecast (hourly)', color: 'var(--forecast)', kind: 'marker-line' },
+  { label: 'Shortfall', color: 'var(--shortfall)', kind: 'area' },
+  { label: 'Surplus', color: 'var(--surplus)', kind: 'area' },
+]

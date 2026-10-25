@@ -25,6 +25,14 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 - **Light theme by default**, with a dark toggle stored in localStorage (wrapped in try/catch). Respect `prefers-color-scheme` on first visit.
 - Use the `frontend-design` skill if available for aesthetic decisions not covered here.
 
+### 1.1 Refinement rules (Phase 6, applied app-wide)
+- **Figures are readouts:** the value is in Plex Mono, the unit smaller and muted beside it, and the two never wrap apart (`Figure`). `%` stays attached.
+- **Readout strips, not floating cards:** related figures share one panel with hairline dividers (`Readout`: the 1px grid gap shows the border colour). A lone last cell on the 2-column mobile grid spans both columns.
+- **One chart frame** (`ChartPanel`): a header row (title, one-line description, actions such as CSV), an HTML legend whose keys mirror the marks (line, marker line, dashed, swatch), the plot, and an optional footnote under a hairline. ECharts' canvas legend is off: it wrapped over the plot on mobile.
+- **The Decision Desk context strip is a timeline** (run used → gate closure → delivery), and its control bar is sticky on desktop.
+- **Copy is short and in trading terms** ("Run used", "Gate closure", "Buffer held back"). InfoTips sit only on terms that need a definition.
+- **The brand mark** is two wind strokes in a rounded tile (also the favicon). Header metadata is a quiet mono uppercase line.
+
 ## 2. App shell
 
 ```
@@ -120,7 +128,7 @@ Long-form, readable page with a max width of 760px and anchored sections: Data s
 
 | Chart | Type | X | Y | Notes |
 |---|---|---|---|---|
-| Decision main | line + area band | time (UK) | MW | Band = stacked areas (firm baseline transparent + (forecast−firm) filled `--firm`). Shortfall fill via `areaStyle` between the actual and forecast series, or a custom series. Vertical markLine at day boundaries. |
+| Decision main | line + area band | time (UK) | MW | Band = stacked areas (invisible firm base + (forecast − firm) filled `--forecast` at 18%, 8% in Hindsight so the shortfall reads). **Shortfall = a second stacked pair that fills only the gap from actual up to forecast** (amber), plus the part below firm wind (red); hourly, on the period starting at each hour. Gaps stay gaps. The axis spans exactly the delivery day. |
 | Vintages | multi-line | time | MW | Up to 16 runs; color ramp from neutral-300 to neutral-500, decision run `--forecast` at 3px, after-cutoff runs dashed. Legend: "Earlier runs · Decision run · Later runs (not available)". |
 | Monitor | 2 grids | time | MW / error MW | Two stacked grids on one shared time axis (small multiples, not a dual axis); `dataZoom` inside + slider linked to both; one crosshair (solid hairline) and one tooltip listing every value at that time; `connectNulls: false`; forecast symbols every hour (size 5, surface ring). Axis names run vertically beside each axis. At a half-hour the tooltip also shows that hour's forecast. Ticks use UTC (`useUTC`), labels UK time (equal in January). |
 | Lead curve | line | lead h | MW | `markArea` for the decision window; tooltip shows n. |

@@ -3,12 +3,14 @@ import { useMemo } from 'react'
 
 import type { Meta, MonitorData } from '@/api/client'
 import { useMeta, useMonitor } from '@/api/queries'
+import { ChartPanel } from '@/components/charts/ChartPanel'
 import { MonitorChart } from '@/components/charts/MonitorChart'
+import { MONITOR_LEGEND } from '@/components/charts/monitorOption'
 import { DateTimeRange, type Range } from '@/components/controls/DateTimeRange'
 import { HorizonSlider } from '@/components/controls/HorizonSlider'
 import { EmptyState, ErrorState, LoadingBar } from '@/components/feedback/States'
 import { InfoTip } from '@/components/feedback/InfoTip'
-import { MetricsStrip } from '@/components/kpi/MetricsStrip'
+import { Readout } from '@/components/kpi/Readout'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -132,6 +134,7 @@ function Monitor({ meta }: { meta: Meta }) {
 function MonitorBody({ data }: { data: MonitorData }) {
   const m = data.metrics
   const cov = data.coverage
+  const gap = cov.pct !== null && cov.pct < 100
   const window = `${fmtUkDateTime(data.params.start)} – ${fmtUkDateTime(data.params.end)}`
   const ariaLabel =
     `Actual and forecast national wind, ${window} UK, at a ${fmtHours(data.params.horizon_h)} horizon. ` +
@@ -139,8 +142,10 @@ function MonitorBody({ data }: { data: MonitorData }) {
 
   return (
     <>
-      <section aria-label="Accuracy for this window" className="mb-4 rounded-lg border bg-card p-4">
-        <MetricsStrip
+      <section aria-label="Accuracy for this window" className="mb-4">
+        <Readout
+          size="md"
+          columns="grid-cols-2 sm:grid-cols-4 lg:grid-cols-7"
           items={[
             { label: 'Hours compared', value: fmtCount(m.n) },
             { label: 'MAE', value: fmtMW(m.mae_mw), info: GLOSSARY.mae },
@@ -154,12 +159,17 @@ function MonitorBody({ data }: { data: MonitorData }) {
             },
             { label: 'WAPE', value: fmtPct(m.wape_pct), info: GLOSSARY.wape },
           ]}
-        >
+        />
+      </section>
+
+      <ChartPanel
+        title="Actual vs forecast"
+        description={`${window} UK · latest run published at least ${fmtHours(data.params.horizon_h)} before each hour`}
+        legend={MONITOR_LEGEND}
+        actions={
           <div className="flex flex-wrap items-center gap-3">
-            <p className="flex items-center gap-1 text-sm">
-              <span
-                className={cn('font-medium', cov.pct !== null && cov.pct < 100 && 'text-shortfall')}
-              >
+            <p className="flex items-center gap-1 text-xs">
+              <span className={cn('font-medium', gap && 'text-shortfall')}>
                 Forecast available for {fmtPct(cov.pct)} of hours
               </span>
               <InfoTip term="Coverage">{GLOSSARY.coverage}</InfoTip>
@@ -170,31 +180,29 @@ function MonitorBody({ data }: { data: MonitorData }) {
               onClick={() => downloadCsv(monitorCsvFilename(data), monitorCsv(data))}
             >
               <Download aria-hidden="true" />
-              Download CSV
+              CSV
             </Button>
           </div>
-        </MetricsStrip>
-        {cov.pct !== null && cov.pct < 100 && (
-          <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
-            {fmtCount(cov.target_hours - cov.with_forecast)} of {fmtCount(cov.target_hours)} hours
-            have no forecast published at least {fmtHours(data.params.horizon_h)} ahead: each run
-            only reaches 21:00 UTC two days after it is published, so late-evening hours drop out
-            beyond about 43.5 h. They are left as gaps, never filled with another run.
-          </p>
-        )}
-      </section>
-
-      <section aria-label="Chart" className="rounded-lg border bg-card p-3 sm:p-4">
+        }
+        footnote={
+          gap ? (
+            <>
+              {fmtCount(cov.target_hours - cov.with_forecast)} of {fmtCount(cov.target_hours)} hours
+              have no forecast published at least {fmtHours(data.params.horizon_h)} ahead: each run
+              only reaches 21:00 UTC two days after it is published, so late-evening hours drop out
+              beyond about 43.5 h. They are left as gaps, never filled with another run.
+            </>
+          ) : (
+            'Error = forecast − actual for the settlement period starting at each hour. Drag or pinch to zoom; the strip below the chart pans.'
+          )
+        }
+      >
         {data.actual.length === 0 ? (
           <EmptyState>No data in this window.</EmptyState>
         ) : (
           <MonitorChart data={data} ariaLabel={ariaLabel} />
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          Error = forecast − actual for the settlement period starting at each hour. Amber bars are
-          shortfalls (wind below forecast), slate bars surpluses. Drag or pinch to zoom.
-        </p>
-      </section>
+      </ChartPanel>
     </>
   )
 }

@@ -16,10 +16,10 @@ export function AppShell() {
           <div className="flex flex-wrap items-center gap-x-6 pt-3 sm:flex-nowrap">
             <Link
               to="/"
-              className="flex items-center gap-2 rounded-sm text-base font-semibold tracking-tight focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              className="flex items-center gap-2.5 rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               <BrandMark />
-              WindDesk
+              <span className="text-[15px] font-semibold tracking-tight">WindDesk</span>
             </Link>
             <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
               <TopNav />
@@ -45,10 +45,19 @@ export function AppShell() {
   )
 }
 
+/** The WindDesk mark: two wind strokes in a rounded tile (also the favicon). */
 function BrandMark() {
   return (
-    <svg viewBox="0 0 16 16" className="size-4 text-forecast" aria-hidden="true">
-      <path d="M15 1v14H1z" fill="currentColor" />
+    <svg viewBox="0 0 24 24" className="size-6 shrink-0" aria-hidden="true">
+      <rect width="24" height="24" rx="6" className="fill-foreground" />
+      <path
+        d="M5.5 9.5h9a2.5 2.5 0 1 0-2.5-2.5M5.5 14.5h11.5a2.5 2.5 0 1 1-2.5 2.5"
+        fill="none"
+        className="stroke-forecast"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }

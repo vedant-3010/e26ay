@@ -13,6 +13,8 @@ export interface ChartColors {
   shortfallSevere: string
   surplus: string
   cutoff: string
+  vintageEarly: string
+  vintageLate: string
   grid: string
   text: string
   muted: string
@@ -28,6 +30,8 @@ const TOKENS: Record<keyof ChartColors, string> = {
   shortfallSevere: '--shortfall-severe',
   surplus: '--surplus',
   cutoff: '--cutoff',
+  vintageEarly: '--vintage-early',
+  vintageLate: '--vintage-late',
   grid: '--chart-grid',
   text: '--foreground',
   muted: '--muted-foreground',
@@ -51,6 +55,20 @@ export function withAlpha(color: string, alpha: number): string {
   if (!hex) return color
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/** Linear blend of two `#rrggbb` colours (t = 0 → a, 1 → b), for the vintage ramp. */
+export function mix(a: string, b: string, t: number): string {
+  const pa = /^#([0-9a-f]{6})$/i.exec(a)?.[1]
+  const pb = /^#([0-9a-f]{6})$/i.exec(b)?.[1]
+  if (!pa || !pb) return t < 0.5 ? a : b
+  const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16)
+  const out = [0, 2, 4].map((i) =>
+    Math.round(channel(pa, i) + (channel(pb, i) - channel(pa, i)) * t)
+      .toString(16)
+      .padStart(2, '0'),
+  )
+  return `#${out.join('')}`
 }
 
 /** Current chart colours; re-read whenever the theme class on <html> changes. */

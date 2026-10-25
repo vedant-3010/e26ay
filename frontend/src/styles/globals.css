@@ -23,6 +23,8 @@
   --color-shortfall-severe: var(--shortfall-severe);
   --color-surplus: var(--surplus);
   --color-cutoff: var(--cutoff);
+  --color-vintage-early: var(--vintage-early);
+  --color-vintage-late: var(--vintage-late);
 
   /* shadcn/ui surface tokens */
   --color-background: var(--background);
@@ -62,6 +64,9 @@
   --shortfall-severe: #dc2626;
   --surplus: #64748b;
   --cutoff: #334155;
+  /* Forecast evolution: older runs lighter → newer runs darker (neutral, never a data hue). */
+  --vintage-early: #cbd5e1; /* slate-300 */
+  --vintage-late: #64748b; /* slate-500 */
 
   --background: #f8fafc; /* slate-50 */
   --foreground: #0f172a; /* slate-900 */
@@ -96,6 +101,8 @@
   --shortfall-severe: #dc2626;
   --surplus: #64748b;
   --cutoff: #cbd5e1;
+  --vintage-early: #334155; /* slate-700 */
+  --vintage-late: #94a3b8; /* slate-400 */
 
   --background: #020617; /* slate-950 */
   --foreground: #f1f5f9;

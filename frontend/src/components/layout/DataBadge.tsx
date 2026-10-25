@@ -11,12 +11,12 @@ export function DataBadge() {
   return (
     <Link
       to="/methodology"
-      className="inline-block rounded-sm text-xs text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="inline-block rounded-sm font-mono text-[11px] tracking-wide text-muted-foreground uppercase hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       Pilot · Jan 2026 decisions · Elexon BMRS ·{' '}
       {snapshot ? (
         <>
-          snapshot <span className="font-mono">{snapshot}</span>
+          snapshot <span className="normal-case">{snapshot}</span>
         </>
       ) : (
         'snapshot pending'

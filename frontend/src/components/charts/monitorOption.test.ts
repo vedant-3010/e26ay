@@ -10,6 +10,8 @@ const COLORS: ChartColors = {
   shortfallSevere: 'red',
   surplus: 'slate',
   cutoff: 'ink',
+  vintageEarly: '#cbd5e1',
+  vintageLate: '#64748b',
   grid: 'grid',
   text: 'text',
   muted: 'muted',

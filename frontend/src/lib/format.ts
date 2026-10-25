@@ -83,3 +83,9 @@ export function shortSha(sha: string | null | undefined): string | null {
 export function shortSnapshotId(id: string | null | undefined): string | null {
   return id ? id.slice(0, 6) : null
 }
+
+/** `14,465 MW` → value and unit. Only splits a trailing unit after a digit, so `—` stays whole. */
+export function splitUnit(text: string): [string, string | null] {
+  const m = /^(.*\d)\s?(MW|GW|GWh|MWh|h|%)$/.exec(text)
+  return m ? [m[1]!, m[2]!] : [text, null]
+}

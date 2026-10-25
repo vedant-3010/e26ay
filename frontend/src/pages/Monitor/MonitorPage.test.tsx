@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import type * as Csv from '@/lib/csv'
-import { fetchRoutes, HEALTH, META, monitorData } from '@/test/fixtures'
+import { fetchRoutes, HEALTH, META, monitorData, readoutValue } from '@/test/fixtures'
 
 import { MonitorPage } from '.'
 
@@ -60,7 +60,8 @@ afterEach(() => {
 describe('Monitor page', () => {
   it('uses the defaults from /api/meta and shows the metrics strip', async () => {
     renderAt('/monitor')
-    expect(await screen.findByText('1,500 MW')).toBeInTheDocument() // MAE
+    await screen.findByRole('region', { name: 'Accuracy for this window' })
+    expect(readoutValue('MAE')).toBe('1,500 MW')
     const req = monitorRequests()[0]!
     expect(req.searchParams.get('start')).toBe('2026-01-02T00:00:00Z')
     expect(req.searchParams.get('end')).toBe('2026-01-09T00:00:00Z')
@@ -68,8 +69,8 @@ describe('Monitor page', () => {
     for (const label of ['MAE', 'RMSE', 'Bias', 'P90 |error|', 'P90 shortfall', 'WAPE']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
-    expect(screen.getByText('+500 MW')).toBeInTheDocument() // bias keeps its sign
-    expect(screen.getByText('15.0%')).toBeInTheDocument() // WAPE
+    expect(readoutValue('Bias')).toBe('+500 MW') // bias keeps its sign
+    expect(readoutValue('WAPE')).toBe('15.0%')
     expect(
       screen.getByRole('img', { name: /Actual and forecast national wind/ }),
     ).toBeInTheDocument()
@@ -85,7 +86,7 @@ describe('Monitor page', () => {
 
   it('reads the view from the URL', async () => {
     renderAt('/monitor?start=2026-01-10T00:00:00Z&end=2026-01-12T00:00:00Z&horizon=36.5')
-    await screen.findByText('1,500 MW')
+    await screen.findByRole('region', { name: 'Accuracy for this window' })
     const req = monitorRequests()[0]!
     expect(req.searchParams.get('start')).toBe('2026-01-10T00:00:00Z')
     expect(req.searchParams.get('horizon_h')).toBe('36.5')
@@ -94,7 +95,7 @@ describe('Monitor page', () => {
 
   it('presets write the window into the URL', async () => {
     const router = renderAt('/monitor')
-    await screen.findByText('1,500 MW')
+    await screen.findByRole('region', { name: 'Accuracy for this window' })
     await userEvent.click(screen.getByRole('button', { name: 'Full month' }))
     await waitFor(() =>
       expect(router.state.location.search).toBe(
@@ -118,8 +119,8 @@ describe('Monitor page', () => {
 
   it('downloads the chart data as CSV', async () => {
     renderAt('/monitor')
-    await screen.findByText('1,500 MW')
-    await userEvent.click(screen.getByRole('button', { name: /Download CSV/ }))
+    await screen.findByRole('region', { name: 'Accuracy for this window' })
+    await userEvent.click(screen.getByRole('button', { name: /CSV/ }))
     expect(download).toHaveBeenCalledOnce()
     const [filename, csv] = download.mock.calls[0] as [string, string]
     expect(filename).toBe('winddesk-monitor_2026-01-02_2026-01-09_H24h.csv')
