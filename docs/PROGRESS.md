@@ -9,7 +9,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 0 Walking skeleton | 🟨 in progress | ~1.1 h | Local, Docker and CI green. Only remaining DoD item: 👤 Vercel import + production URL checks |
 | 1 Data snapshot | ✅ done | ~1.0 h | Snapshot `ac22a4140bca`; 13 contract tests pass; started while Phase 0 waits on Vercel (human said continue) |
 | 2 Analytics core | ✅ done | ~1.25 h | 99.5% analytics coverage; store loads in ~257 ms; calibration within ±5 pp |
-| 3 Notebook + insights | ⬜ | | |
+| 3 Notebook + insights | ✅ done | ~0.75 h | Notebook executed with outputs; `INSIGHTS.md` written by it; alignment check changes nothing |
 | 4 API | ⬜ | | |
 | 5 Frontend + Monitor | ⬜ | | |
 | 6 Decision Desk | ⬜ | | |
@@ -28,10 +28,36 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 1. **Import the repo into Vercel** (Hobby, vercel.com/new → `vedant-3010/e26ay`). Leave the framework preset as detected; `vercel.json` sets the build command. Paste back the production URL (`<project>.vercel.app`), plus the build log if the build fails. As of 2026-10-26 no Vercel project for `e26ay` exists in the connected account.
 2. Then Claude Code checks in a cold context: `curl -H 'Accept: text/html' <url>/` and `<url>/monitor` return the SPA, and `<url>/api/health` returns JSON with `snapshot_id` = `ac22a4140bca`, which proves the snapshot is inside the function bundle.
 3. Commits are approved by the human one batch at a time (standing instruction).
-4. **FYI, data finding to discuss before the pitch (Phase 3 will quantify it):** at the decision lead, WINDFOR **over-forecasts FUELHH wind by about 1.7 GW on average** (EPEX bias +1,746 MW, MAE 2,022 MW, WAPE 17.9%). The bias rises with forecast level, from +371 MW in the lowest quintile to +3,458 MW in the highest. That pattern is consistent with transmission constraints/curtailment (metered output below the unconstrained forecast in windy hours), or with a scope difference between the two datasets (PRD assumption 5). This is a **hypothesis, not yet confirmed**: Phase 3 checks it against Elexon's dataset descriptions and states it honestly on the Methodology page.
+4. **Read `docs/INSIGHTS.md`**: these are the numbers for the video. Two things to decide before the pitch:
+   - **The systematic over-forecast** (+1,746 MW at the EPEX cutoff, already +1,455 MW only 0.5 h ahead, and rising with wind level). It looks like a level offset between WINDFOR and FUELHH (curtailment, or the two covering different farms), not forecast skill. Elexon's descriptions don't settle it. Suggested framing: "a structural gap we quantify and buffer against; worth confirming with your data team."
+   - **Story-day order for Part 1.** The worst-miss day (Wed 28 Jan) is a 0/24 firm-wind day, honest but hard to open on. Suggestion: open on Tue 27 Jan (buffer did its job: 17% shortfall, firm held 23/24), then show 28 Jan as the honest limit. Decided in Phase 8 when filling `DEMO_SCRIPT.md`.
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 3: Analysis notebook and insights ✅
+- **Built:** `notebooks/01_wind_forecast_accuracy.ipynb`, with 11 sections following DATA §8. Each opens with a **Question** and closes with an **Answer** cell generated from the computed values, so the prose can't drift from the numbers. It imports `winddesk.analytics` and `winddesk.store` only; no logic is re-implemented. Static matplotlib figures (11) use the app's semantic colours. It is committed executed (875 KB; no errors or stderr in outputs; nbformat-valid; no local paths). Section 11 writes `docs/INSIGHTS.md`.
+  - Added `analytics.selection.hourly_mean_actuals` (+2 tests) for the alignment sensitivity check.
+  - Notebooks are ruff-formatted; `E501` is ignored for notebooks only (long prose f-strings), with a justification comment in pyproject.
+- **Checks:**
+  - `make notebook` ✅ (about 16 s).
+  - `make check` ✅: 244 pytest, 99.48% analytics coverage, 11 Vitest.
+  - `make test-contract` ✅: 128.
+- **Headline numbers:** see `docs/INSIGHTS.md`.
+  - EPEX: MAE 2,022 MW, WAPE 17.9%, bias +1,746 MW, P90 shortfall 4,154 MW, P90 achieved 87.0%.
+  - N2EX lowers MAE by only 1.3%.
+  - Lead-curve MAE: 1,667 / 1,740 / 1,949 / 2,078 / 2,405 MW at 1.5 / 12.5 / 24.5 / 36.5 / 47.5 h.
+  - Value of the forecast @90%: 5,380 → 9,523 MW (+4,143 MW).
+  - Coverage is 100% up to 43.5 h ahead, and 79.2% at 48 h.
+- **Story days** (rules written in the notebook, §9):
+  1. Worst miss: **Wed 28 Jan** (MAE 5,329 MW; 267 → 138 GWh; firm held 0/24; later runs saw it coming).
+  2. Typical: **Sat 17 Jan** (MAE 1,659 MW; firm held 21/24).
+  3. Buffer did its job: **Tue 27 Jan** (windy, 17% shortfall, firm held 23/24).
+- **3.5 alignment sensitivity:** using the hourly mean instead of the period starting at H changes EPEX MAE by +16 MW (+0.8%), and bias and calibration barely move. **No headline conclusion changes**: the notebook re-evaluates "bias > +1 GW", "N2EX not materially better", and "bands within ±5 pp" under both alignments.
+- **Findings recorded:**
+  - **Structural over-forecast:** +1,455 MW bias even 0.5 h ahead; wind below forecast in 85% of decision hours; actual ≈ 737 + 0.81 × forecast (r = 0.93); bias +371 → +3,458 MW from the lowest to the highest forecast quintile. Elexon's OpenAPI descriptions (checked 2026-10-26) only say "generation outturn … average MW over 30 minutes" (FUELHH) and "wind generation forecast data" (WINDFOR); nothing about constraints or embedded wind. So it is stated as a **hypothesis** (curtailment or a scope difference), consistent with PRD assumption 5 still being open.
+  - **Buffer method trade-off at 90% (EPEX):** conditional LODO holds back 3,509 MW on average for 87.0% coverage; a flat LODO buffer holds back 4,142 MW for 88.6%. Both are within ±5 pp. The app keeps conditional (PRD F4 "Should"); the trade-off goes on the Methodology page.
+- **Follow-ups:** Methodology page (Phase 7) states the over-forecast finding, the buffer trade-off and the off-schedule run; DEMO script numbers come from `INSIGHTS.md` (Phase 8).
 
 ### 2026-10-26 — Phase 2: Analytics core ✅
 - **Built (all pure, mypy `--strict`):**
@@ -134,4 +160,5 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 - `.cache/` (gitignored) holds the exported `openapi.json` used by `make gen-api`.
 
 ## Ideas backlog (not in scope; do not build without approval)
-- _(none yet)_
+- **Bias-corrected forecast view:** a LODO linear recalibration (actual ≈ a + b·forecast) would remove most of the +1.7 GW level offset. Show it as an optional "corrected" line, clearly labelled. It needs PRD scope approval.
+- **Buffer method toggle** (flat vs conditional) in the Accuracy Lab, given the coverage/MW trade-off found in Phase 3.

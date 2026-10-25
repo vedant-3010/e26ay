@@ -78,11 +78,11 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 
 ## Phase 3 — Analysis notebook and insights
 
-- [ ] 3.1 `notebooks/01_wind_forecast_accuracy.ipynb` following DATA §8. Import `winddesk.analytics` and do not reimplement logic. Each section opens with a markdown "question" cell and closes with a one-line "answer" cell.
-- [ ] 3.2 Execute in place (`make notebook`) and commit with outputs.
-- [ ] 3.3 Write `docs/INSIGHTS.md` using the template below. Use real numbers from the notebook only.
-- [ ] 3.4 Pick 3 **story days** for the demo: the worst miss, a typical day, and a high-wind day where the buffer did its job.
-- [ ] 3.5 If the alignment sensitivity changes any headline conclusion, log it and tell the human.
+- [x] 3.1 `notebooks/01_wind_forecast_accuracy.ipynb` following DATA §8. Import `winddesk.analytics` and do not reimplement logic. Each section opens with a markdown "question" cell and closes with a one-line "answer" cell.
+- [x] 3.2 Execute in place (`make notebook`) and commit with outputs.
+- [x] 3.3 Write `docs/INSIGHTS.md` using the template below. Use real numbers from the notebook only.
+- [x] 3.4 Pick 3 **story days** for the demo: the worst miss, a typical day, and a high-wind day where the buffer did its job.
+- [x] 3.5 If the alignment sensitivity changes any headline conclusion, log it and tell the human.
 
 `docs/INSIGHTS.md` template:
 ```markdown
