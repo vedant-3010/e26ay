@@ -156,6 +156,18 @@ def make_pairs(selected: pd.DataFrame, actuals: pd.DataFrame) -> pd.DataFrame:
     return pairs.sort_values(["target_time", "publish_time"]).reset_index(drop=True)[PAIR_COLUMNS]
 
 
+def hourly_mean_actuals(actuals: pd.DataFrame) -> pd.DataFrame:
+    """Alternative alignment for the sensitivity check (DATA §4): the mean of the two settlement
+    periods in each hour, keyed by the hour start. An hour missing either period is dropped
+    (gaps stay gaps). Pass the result to :func:`make_pairs` in place of ``actuals``."""
+    hour = actuals["target_time"].dt.floor("h").rename("target_time")
+    stats = actuals.groupby(hour)["actual_mw"].agg(["mean", "count"])
+    complete = stats[stats["count"] == 2]
+    return pd.DataFrame(
+        {"target_time": complete.index.astype(UTC_DTYPE), "actual_mw": complete["mean"].to_numpy()}
+    )
+
+
 def decision_pool(
     forecasts: pd.DataFrame, actuals: pd.DataFrame, days: Iterable[date], cutoff_local: time
 ) -> pd.DataFrame:

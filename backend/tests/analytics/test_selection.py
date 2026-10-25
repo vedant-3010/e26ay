@@ -8,6 +8,7 @@ from winddesk.analytics.selection import (
     PAIR_COLUMNS,
     coverage,
     decision_pool,
+    hourly_mean_actuals,
     hourly_targets,
     make_pairs,
     select_at_horizon,
@@ -166,6 +167,18 @@ class TestPairs:
             D3: [0.0],
         }
         assert set(n2ex_pool["error_mw"]) == {1_200.0, 1_100.0, 1_000.0}
+
+    def test_hourly_mean_alignment(self, forecasts: pd.DataFrame, actuals: pd.DataFrame) -> None:
+        # Hour h on day i: mean of (9 800 + 10h + 100i) and that + 100 → + 50 vs the h:00 period.
+        hourly = hourly_mean_actuals(actuals)
+        assert len(hourly) == 72
+        assert hourly.iloc[0]["actual_mw"] == 9_850
+        pool = decision_pool(forecasts, hourly, DAYS, EPEX)
+        assert set(pool.loc[pool["delivery_date"] == D1, "error_mw"]) == {150.0}  # 200 − 50
+
+    def test_hourly_mean_drops_incomplete_hours(self, actuals: pd.DataFrame) -> None:
+        gappy = actuals[actuals["target_time"] != utc(D1, 5, 30)]
+        assert utc(D1, 5) not in set(hourly_mean_actuals(gappy)["target_time"])
 
     def test_decision_pool_skips_days_without_a_run(
         self, forecasts: pd.DataFrame, actuals: pd.DataFrame
