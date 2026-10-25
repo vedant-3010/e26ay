@@ -1,4 +1,4 @@
-import json
+from datetime import time
 from pathlib import Path
 
 import pytest
@@ -6,21 +6,12 @@ import pytest
 from winddesk.analytics.pilot import CONFIDENCES
 from winddesk.store import DataStore, SnapshotMissingError
 
-from .conftest import D1, D2, D3, EPEX, synthetic_actuals, synthetic_forecasts
+from .conftest import D1, D2, D3, EPEX, SYNTHETIC_SNAPSHOT_ID
 
 
-@pytest.fixture
-def snapshot_dir(tmp_path: Path) -> Path:
-    synthetic_forecasts().to_parquet(tmp_path / "forecasts.parquet", index=False)
-    synthetic_actuals().to_parquet(tmp_path / "actuals.parquet", index=False)
-    (tmp_path / "manifest.json").write_text(json.dumps({"snapshot_id": "0123456789ab"}))
-    (tmp_path / "quality.json").write_text(json.dumps({"status": "ok", "checks": []}))
-    return tmp_path
-
-
-def test_loads_and_precomputes(snapshot_dir: Path) -> None:
-    store = DataStore(snapshot_dir)
-    assert store.snapshot_id == "0123456789ab"
+def test_loads_and_precomputes(synthetic_store: DataStore) -> None:
+    store = synthetic_store
+    assert store.snapshot_id == SYNTHETIC_SNAPSHOT_ID
     assert set(store.pools) == {"epex", "n2ex"}
     # Only D1–D3 have runs and actuals; the other in-scope days contribute no pairs.
     assert set(store.pools["epex"]["delivery_date"]) == {D1, D2, D3}
@@ -31,11 +22,9 @@ def test_loads_and_precomputes(snapshot_dir: Path) -> None:
     assert store.load_ms > 0
 
 
-def test_custom_cutoffs_are_computed_once(snapshot_dir: Path) -> None:
-    store = DataStore(snapshot_dir)
+def test_custom_cutoffs_are_computed_once(synthetic_store: DataStore) -> None:
+    store = synthetic_store
     assert store.pool_for_cutoff(EPEX) is store.pools["epex"]
-    from datetime import time
-
     custom = store.pool_for_cutoff(time(10, 0))  # after the 09:30 run → same as N2EX
     assert custom.equals(store.pools["n2ex"])
     assert store.pool_for_cutoff(time(10, 0)) is custom

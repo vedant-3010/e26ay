@@ -16,8 +16,10 @@ Hand-computed consequences used across the tests:
 - N2EX (cutoff 09:50 on D−1) uses the 09:30 run → error = 1 200 − 100·i: 1 200, 1 100, 1 000 MW.
 """
 
+import json
 from collections.abc import Iterator
 from datetime import UTC, date, datetime, time, timedelta
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -25,7 +27,9 @@ from fastapi.testclient import TestClient
 
 from winddesk.analytics.selection import decision_pool
 from winddesk.analytics.timeutil import UTC_DTYPE
+from winddesk.api.deps import store_dep
 from winddesk.main import create_app
+from winddesk.store import DataStore
 
 D1, D2, D3 = date(2026, 1, 2), date(2026, 1, 3), date(2026, 1, 4)
 DAYS = (D1, D2, D3)
@@ -99,7 +103,60 @@ def n2ex_pool(forecasts: pd.DataFrame, actuals: pd.DataFrame) -> pd.DataFrame:
     return decision_pool(forecasts, actuals, DAYS, N2EX)
 
 
+SYNTHETIC_SNAPSHOT_ID = "0123456789ab"
+
+
+@pytest.fixture
+def synthetic_snapshot_dir(tmp_path: Path) -> Path:
+    """A snapshot directory holding the synthetic dataset, laid out like data/snapshot."""
+    synthetic_forecasts().to_parquet(tmp_path / "forecasts.parquet", index=False)
+    synthetic_actuals().to_parquet(tmp_path / "actuals.parquet", index=False)
+    manifest = {"snapshot_id": SYNTHETIC_SNAPSHOT_ID, "created_at": "2026-10-26T00:00:00Z"}
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    quality = {
+        "status": "warn",
+        "summary": {
+            "forecast_runs": 9,
+            "forecast_rows": 216,
+            "forecast_duplicates_removed": 0,
+            "actual_rows": 144,
+            "actual_duplicates_removed": 0,
+        },
+        "checks": [
+            {"id": "runs_per_day", "status": "warn", "message": "3 runs per day", "details": {}},
+            {
+                "id": "run_times",
+                "status": "ok",
+                "message": "nominal",
+                "details": {"off_schedule": ["2026-01-02T12:25:00Z"]},
+            },
+            {
+                "id": "periods_per_day",
+                "status": "ok",
+                "message": "all present",
+                "details": {"missing_periods": []},
+            },
+        ],
+    }
+    (tmp_path / "quality.json").write_text(json.dumps(quality))
+    return tmp_path
+
+
+@pytest.fixture
+def synthetic_store(synthetic_snapshot_dir: Path) -> DataStore:
+    return DataStore(synthetic_snapshot_dir)
+
+
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     with TestClient(create_app()) as c:
+        yield c
+
+
+@pytest.fixture
+def api(synthetic_store: DataStore) -> Iterator[TestClient]:
+    """A client whose data endpoints read the synthetic store."""
+    app = create_app()
+    app.dependency_overrides[store_dep] = lambda: synthetic_store
+    with TestClient(app) as c:
         yield c
