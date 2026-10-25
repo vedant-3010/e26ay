@@ -155,7 +155,7 @@ def select_at_horizon(forecasts: pd.DataFrame, targets: pd.Series, horizon_h: fl
 
 - Targets are the hourly target times in the requested range (`minute == 0`).
 - Invariant: when a forecast exists, `lead_h ≥ horizon_h`. The effective lead can exceed H by up to the gap between runs (≤ 4 h).
-- **Coverage gaps are expected at long horizons.** A run published on day P only reaches (P+2) 21:00. The earliest run that covers a 22:00 target is therefore the 02:30 run of the previous day, which is 43.5 h ahead; for 23:00 it is 44.5 h ahead. So for H > 43.5 h the 22:00 and 23:00 UTC targets have no qualifying run. Return `null` for those hours. The API reports coverage, and the UI explains it.
+- **Coverage gaps are expected at long horizons.** A run published on day P only reaches (P+2) 21:00. The earliest run that covers a 22:00 target is therefore the 02:30 run of the previous day, which is 43.5 h ahead; for 23:00 it is 44.5 h ahead. So for H > 43.5 h the 22:00 UTC targets have no qualifying run, and for H > 44.5 h the 23:00 targets have none either. Return `null` for those hours. The API reports coverage, and the UI explains it. *Verified on the snapshot:* coverage is 100% for every H ≤ 43.5 h, the gaps at H = 44 h are exactly the 22:00 targets, and at H = 45 h exactly the 22:00 and 23:00 targets (`tests/contract/test_analytics_snapshot.py`).
 
 ### 5.2 Decision cutoff (timezone-correct)
 
@@ -202,7 +202,7 @@ where `e = forecast_mw − actual_mw`. Use `numpy.quantile(..., method="linear")
 
 ### 5.6 Error vs lead time (lead curve)
 
-- Population: **all pairs** (every run × every target it covers) with target in the delivery window and `0 ≤ lead_h ≤ 48`.
+- Population: **all pairs** (every run × every target it covers) with target in the delivery window and `0 ≤ lead_h < 48` (bins cover [0, 48); no real lead equals 48 exactly).
 - Group by lead bin `[k·bin_h, (k+1)·bin_h)`, i.e. `floor(lead_h / bin_h)`. Label a bin by its midpoint, so with `bin_h = 1` the labels are 0.5, 1.5, …, 47.5 (each nominal run contributes exactly that lead), and with `bin_h = 3` the bins are [0,3), [3,6), … Do **not** group on the exact lead value: the 15 Jan 12:25 run has leads of k + 0.58 h (§1.2), which fall in bin [k, k+1).
 - Per bin: `n, mae, rmse, bias, p50_abs, p90_abs, p99_abs`.
 - This is a different population from §5.1 (exact lead rather than "at least H"). Label the chart "error by actual lead time".
@@ -213,7 +213,7 @@ Given a decision population `pool`, a confidence `c ∈ {0.80, 0.90, 0.95}`, and
 
 1. `train = pool[pool.delivery_date != D]` (leave-one-day-out).
 2. **Simple (Must):** `buffer = max(quantile_c(train.error_mw), 0)`, the same for every hour.
-3. **Conditional (Should):** split `train` into 5 bins by `forecast_mw` quintiles (edges computed on `train`, rounded to 100 MW, de-duplicated). `buffer_bin = max(quantile_c(error in bin), 0)`. If a bin has `n < 30`, use the simple buffer for it.
+3. **Conditional (Should):** split `train` into 5 bins by `forecast_mw` quintiles (edges computed on `train`, rounded to 100 MW, de-duplicated). Edges at or below the training minimum, or above its maximum, are dropped, so no bin is empty. A value on an edge belongs to the upper bin. For display, the first bin starts at 0 MW and the last is open-ended. `buffer_bin = max(quantile_c(error in bin), 0)`. If a bin has `n < 30`, use the simple buffer for it. *Implemented as the default (`conditional_lodo`).*
 4. For each hour of D: `firm_mw = max(forecast_mw − buffer(bin(forecast_mw)), 0)`.
 5. Clamp the buffer at ≥ 0, so firm wind never exceeds the forecast (a conservative choice for a buyer).
 
@@ -226,12 +226,13 @@ Given a decision population `pool`, a confidence `c ∈ {0.80, 0.90, 0.95}`, and
 ### 5.9 Energy for a day
 
 - `forecast_mwh = Σ forecast_mw × 1 h` over the day's hourly points (null if any hour is missing; report `partial`).
-- `actual_mwh = Σ actual_mw × 0.5 h` over the day's half-hours.
+- `actual_mwh = Σ actual_mw × 0.5 h` over the day's half-hours (null if any period is missing).
+- `energy_error_pct = 100 × (forecast_mwh − actual_mwh) / forecast_mwh`. Positive means wind fell short of the plan, matching the error sign. It is relative to the *forecast* because that is what the desk planned on, which matches the UI's "−8% vs fc" and the narrative's "8% below forecast".
 - Show GWh in the UI. Note in the methodology that hourly points are treated as hourly averages.
 
 ### 5.10 Vintages (forecast evolution) for day D
 
-Runs with `publish_time ∈ [D_start − 48 h, D_start)` (UK day start). For each run, return its points within D, `is_decision_run`, and `after_cutoff = publish_time > cutoff_utc`.
+Runs with `publish_time ∈ [D_start − 48 h, D_start)` (UK day start). For each run, return its points within D, `is_decision_run`, and `after_cutoff = publish_time > cutoff_utc`. Runs with no point inside D are omitted. On the real data every day has 16 vintages.
 
 ### 5.11 Distribution, slices, worst events
 
@@ -244,13 +245,13 @@ Runs with `publish_time ∈ [D_start − 48 h, D_start)` (UK day start). For eac
 
 ### 5.12 Value of the forecast (Should — strong pitch point)
 
-- **Unconditional firm wind:** `quantile_{1−c}(actual_mw)` across the pilot hours, i.e. what you could bank with no forecast at all.
-- **Forecast-based firm wind:** mean `firm_mw` across the pilot (LODO).
+- **Unconditional firm wind:** `quantile_{1−c}(actual_mw)` across the pilot's decision hours (the same hours as the firm values, i.e. the settlement periods starting on the hour), i.e. what you could bank with no forecast at all.
+- **Forecast-based firm wind:** mean `firm_mw` across the same hours (LODO).
 - Value = the difference in MW. Pitch line: *"With the forecast you can bank X MW more wind on an average hour than without it."*
 
 ### 5.13 Narrative text (templated, tested)
 
-- `decision_summary(day_result) -> str`. Example: "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. At 90% confidence you could count on an average of 13.1 GW. Wind delivered 380 GWh (8% below forecast), with the largest shortfall of 2.9 GW at 18:00."
+- `decision_summary(day_result, hindsight=True) -> str`. With `hindsight=False` (Trader view) every outcome sentence is omitted, so the honest view never leaks the result. Example: "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. At 90% confidence you could count on an average of 13.1 GW. Wind delivered 380 GWh (8% below forecast), with the largest shortfall of 2.9 GW at 18:00."
 - `accuracy_takeaways(stats) -> list[str]` returns three sentences: typical error at the decision lead; bias; buffer guidance (including the high-wind bin).
 - Choose wording by thresholds: |bias| < 100 MW reads as "no material bias". Unit-test each branch.
 

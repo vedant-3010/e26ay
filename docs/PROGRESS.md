@@ -8,7 +8,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 |---|---|---|---|
 | 0 Walking skeleton | 🟨 in progress | ~1.1 h | Local, Docker and CI green. Only remaining DoD item: 👤 Vercel import + production URL checks |
 | 1 Data snapshot | ✅ done | ~1.0 h | Snapshot `ac22a4140bca`; 13 contract tests pass; started while Phase 0 waits on Vercel (human said continue) |
-| 2 Analytics core | ⬜ | | |
+| 2 Analytics core | ✅ done | ~1.25 h | 99.5% analytics coverage; store loads in ~257 ms; calibration within ±5 pp |
 | 3 Notebook + insights | ⬜ | | |
 | 4 API | ⬜ | | |
 | 5 Frontend + Monitor | ⬜ | | |
@@ -28,9 +28,56 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 1. **Import the repo into Vercel** (Hobby, vercel.com/new → `vedant-3010/e26ay`). Leave the framework preset as detected; `vercel.json` sets the build command. Paste back the production URL (`<project>.vercel.app`), plus the build log if the build fails. As of 2026-10-26 no Vercel project for `e26ay` exists in the connected account.
 2. Then Claude Code checks in a cold context: `curl -H 'Accept: text/html' <url>/` and `<url>/monitor` return the SPA, and `<url>/api/health` returns JSON with `snapshot_id` = `ac22a4140bca`, which proves the snapshot is inside the function bundle.
 3. Commits are approved by the human one batch at a time (standing instruction).
+4. **FYI, data finding to discuss before the pitch (Phase 3 will quantify it):** at the decision lead, WINDFOR **over-forecasts FUELHH wind by about 1.7 GW on average** (EPEX bias +1,746 MW, MAE 2,022 MW, WAPE 17.9%). The bias rises with forecast level, from +371 MW in the lowest quintile to +3,458 MW in the highest. That pattern is consistent with transmission constraints/curtailment (metered output below the unconstrained forecast in windy hours), or with a scope difference between the two datasets (PRD assumption 5). This is a **hypothesis, not yet confirmed**: Phase 3 checks it against Elexon's dataset descriptions and states it honestly on the Methodology page.
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 2: Analytics core ✅
+- **Built (all pure, mypy `--strict`):**
+  - `analytics/selection.py`: `select_at_horizon` (merge_asof, backward, by target), `coverage`, `select_decision_run` (no look-ahead filter first; gaps never substituted), `make_pairs` (H ↔ the period starting at H), `decision_pool`, `vintages_for_day`.
+  - `metrics.py`: `compute_metrics` → `Metrics` (n, MAE, RMSE, bias, WAPE, P50/P90/P99 |e|, P90 shortfall, max shortfall + time).
+  - `buffers.py`: simple and conditional LODO buffers (quintile bins, n < 30 falls back), `firm_wind`, `calibrate`.
+  - `accuracy.py`: lead curve (floor bins), distribution, by hour, by level (+ achieved %), daily, worst hours, auction comparison, value of the forecast.
+  - `decision.py`: `decision_day` with KPIs, energy, buffers and vintages.
+  - `narrative.py`: `decision_summary` (with a Trader-view variant) and `accuracy_takeaways`.
+  - `store.py`: `DataStore` (snapshot, all pairs, both pools, 2 × 3 calibrations, 1 h/3 h lead curves, cached custom-cutoff pools), built in the FastAPI lifespan and lazily via `get_store()`.
+  - `ingest.validate` now calls `select_decision_run` (the Phase 1 follow-up); `quality.json` is byte-identical.
+- **Tests:** a synthetic fixture in `tests/conftest.py` (3 days, runs at 07:30/09:30/11:30, h:30 periods offset on purpose to catch misalignment) with every expectation derived in comments. It covers all DATA §7 cases 1–13: exact horizon boundary, nulls and coverage, `lead ≥ H` at 97 horizons, the BST cutoff, a run 1 minute after the cutoff being ignored (and one exactly at it used), partial runs without substitution, metrics with n = 0, LODO invariance under a 5 GW change to the day's own actuals, bins with n < 30 falling back, 0 ≤ firm ≤ forecast, energy integration, lead-curve counts per bin, and every narrative branch.
+- **Checks (2026-10-26):**
+  - `make check` ✅: **242 pytest, analytics line coverage 99.48%** (gate 90% now enforced in `make test` and CI); mypy strict clean (26 files); 11 Vitest; build OK.
+  - `make test-contract` ✅: **128 passed**, including:
+    - `lead ≥ H` on the real snapshot at all 97 horizons;
+    - coverage of 100% for H ≤ 43.5 h, with gaps exactly at 22:00 (44 h) and 22:00 + 23:00 (45 h);
+    - no look-ahead for all 31 days × 5 cutoffs (EPEX, N2EX, 00:00, 09:00, 12:45);
+    - calibration within ±5 pp for both auctions × 80/90/95%.
+  - **Store startup: 256–259 ms** (5 cold processes; budget < 1 s). One `decision_day` takes about 7 ms.
+- **Real-data results, for Phase 3 to confirm:**
+
+  | | EPEX 09:20 | N2EX 09:50 |
+  |---|---|---|
+  | n, lead window | 744, 16.5–39.5 h | 744, 14.5–37.5 h |
+  | MAE / WAPE | 2,022 MW / 17.9% | 1,996 MW / 17.7% |
+  | Bias | +1,746 MW | +1,728 MW |
+  | P90 shortfall | 4,154 MW | 4,184 MW |
+  | Calibration 80/90/95% | 77.7 / 87.0 / 92.6% | 78.5 / 87.2 / 92.3% |
+
+  - Moving from EPEX to N2EX cuts MAE by **only 1.3%**.
+  - Value of the forecast at 90% (EPEX): without a forecast you could bank 5,380 MW; with it, 9,523 MW on average, **+4,143 MW**.
+  - Lead-curve MAE: 1,669 MW at 0.5 h → 1,859 MW at 16.5 h → 2,173 MW at 40.5 h → 2,405 MW at 48 h.
+- **Decisions / doc changes:**
+  - DATA §5.1: exact gap thresholds, verified.
+  - DATA §5.6: population is `0 ≤ lead < 48`.
+  - DATA §5.7: edge rules (out-of-range edges dropped, value on an edge → upper bin, first bin from 0 MW).
+  - DATA §5.9: **`energy_error_pct = 100 × (forecast − actual) / forecast`**, positive = shortfall. The docs disagreed (the API example implied ÷ actual; UI_SPEC "−8% vs fc" and the narrative example imply ÷ forecast); resolved in favour of the forecast, which is what the desk planned on. API example updated (8.4 → 7.8).
+  - DATA §5.10: runs without points in D are omitted.
+  - DATA §5.12: population is the decision hours.
+  - DATA §5.13: `hindsight` flag.
+  - API.md: `buffers.method` = `conditional_lodo`.
+- **Follow-ups (Phase 4):**
+  - Expose a Trader-view summary (e.g. `summary_trader`) so the Trader view doesn't show outcome text. This is an additive API change; update API.md.
+  - `/api/meta.forecast_runs.run_times_utc` = the nominal schedule.
+  - The Accuracy `start`/`end` filter applies to the evaluated hours; LODO training still uses the full pool (document it in Methodology).
 
 ### 2026-10-26 — Phase 1: Data ingestion and snapshot ✅
 - **Built:** `winddesk.ingest` with four parts.

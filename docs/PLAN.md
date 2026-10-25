@@ -63,14 +63,14 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 ## Phase 2 — Analytics core
 
 - [x] 2.1 `analytics/timeutil.py`: `LONDON`, `decision_cutoff_utc`, `delivery_day_targets`, `to_uk_label`.
-- [ ] 2.2 `analytics/selection.py`: `select_at_horizon`, `select_decision_run`, `vintages_for_day`.
-- [ ] 2.3 `analytics/metrics.py`: `compute_metrics(pairs) -> Metrics` dataclass.
-- [ ] 2.4 `analytics/buffers.py`: simple + conditional LODO buffers, `firm_wind`, `calibration`.
-- [ ] 2.5 `analytics/accuracy.py`: lead curve, distribution, by hour, by level, daily, worst, auction comparison, forecast value.
-- [ ] 2.6 `analytics/decision.py`: assemble one day's result (run, points, firm, KPIs, energy).
-- [ ] 2.7 `analytics/narrative.py`: `decision_summary`, `accuracy_takeaways`.
-- [ ] 2.8 `store.py`: load the snapshot, build `pairs`, decision pools (epex/n2ex), calibration grid, lead curves. Log the startup time.
-- [ ] 2.9 Tests for every case in DATA §7 (synthetic fixture with hand-computed values in comments).
+- [x] 2.2 `analytics/selection.py`: `select_at_horizon`, `select_decision_run`, `vintages_for_day`.
+- [x] 2.3 `analytics/metrics.py`: `compute_metrics(pairs) -> Metrics` dataclass.
+- [x] 2.4 `analytics/buffers.py`: simple + conditional LODO buffers, `firm_wind`, `calibration`.
+- [x] 2.5 `analytics/accuracy.py`: lead curve, distribution, by hour, by level, daily, worst, auction comparison, forecast value.
+- [x] 2.6 `analytics/decision.py`: assemble one day's result (run, points, firm, KPIs, energy).
+- [x] 2.7 `analytics/narrative.py`: `decision_summary`, `accuracy_takeaways`.
+- [x] 2.8 `store.py`: load the snapshot, build `pairs`, decision pools (epex/n2ex), calibration grid, lead curves. Log the startup time.
+- [x] 2.9 Tests for every case in DATA §7 (synthetic fixture with hand-computed values in comments).
 
 **DoD:** `pytest -m "not snapshot"` passes with ≥ 90% line coverage on `winddesk/analytics` · mypy strict is clean · store startup < 1 s locally.
 

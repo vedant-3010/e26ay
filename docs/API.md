@@ -92,7 +92,7 @@ The Decision Desk payload for one delivery day (DATA §5.2–5.10, §5.13).
   "forecast": [{"t": "2026-01-15T00:00:00Z", "mw": 12000.0, "firm_mw": 10100.0, "lead_h": 16.5}],
   "actual": [{"t": "2026-01-15T00:00:00Z", "mw": 11800.0}],
   "kpis": {
-    "forecast_mwh": 412000.0, "actual_mwh": 380000.0, "energy_error_pct": 8.4,
+    "forecast_mwh": 412000.0, "actual_mwh": 380000.0, "energy_error_pct": 7.8,
     "avg_firm_mw": 13100.0, "avg_buffer_mw": 1900.0,
     "mae_mw": 1500.0, "bias_mw": 1300.0,
     "max_shortfall_mw": 2900.0, "max_shortfall_at": "2026-01-15T18:00:00Z",
@@ -105,7 +105,7 @@ The Decision Desk payload for one delivery day (DATA §5.2–5.10, §5.13).
   "summary": "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. …"
 }
 ```
-`actual` is always returned. The UI decides whether to show it (Trader view vs Hindsight). `buffers.method` is `simple_lodo` until the conditional method is implemented.
+`actual` is always returned. The UI decides whether to show it (Trader view vs Hindsight). `buffers.method` is `conditional_lodo` (implemented in Phase 2). `energy_error_pct = 100 × (forecast − actual) / forecast`, so positive means a shortfall (DATA §5.9).
 
 ## `GET /api/accuracy`
 Accuracy Lab payload (DATA §5.5–5.12).
