@@ -3,17 +3,10 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
-import type { Health } from '@/api/client'
 import { routes } from '@/router'
+import { fetchRoutes, HEALTH, META } from '@/test/fixtures'
 
-const HEALTH: Health = {
-  status: 'ok',
-  snapshot_id: 'a1b2c3d4e5f6',
-  git_sha: 'abc1234def5678',
-  version: '1.0.0',
-}
-
-function renderAt(path: string, fetchImpl: () => Promise<Response>) {
+function renderAt(path: string, fetchImpl: (input: RequestInfo | URL) => Promise<Response>) {
   vi.stubGlobal('fetch', vi.fn(fetchImpl))
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const router = createMemoryRouter(routes, { initialEntries: [path] })
@@ -25,7 +18,8 @@ function renderAt(path: string, fetchImpl: () => Promise<Response>) {
   return router
 }
 
-const healthy = () => Promise.resolve(Response.json(HEALTH))
+const healthy = (input: RequestInfo | URL) =>
+  fetchRoutes({ '/api/health': HEALTH, '/api/meta': META })(input)
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -46,7 +40,7 @@ describe('AppShell', () => {
       'aria-current',
       'page',
     )
-    expect(screen.getByRole('heading', { name: 'Decision Desk' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Decision Desk' })).toBeInTheDocument()
   })
 
   it('shows version, short SHA and snapshot from /api/health', async () => {
@@ -64,11 +58,11 @@ describe('AppShell', () => {
 
   it('supports deep links and tab navigation', async () => {
     const router = renderAt('/monitor', healthy)
-    expect(screen.getByRole('heading', { name: 'Forecast Monitor' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Forecast Monitor' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('link', { name: 'Accuracy Lab' }))
     expect(router.state.location.pathname).toBe('/accuracy')
-    expect(screen.getByRole('heading', { name: 'Accuracy Lab' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Accuracy Lab' })).toBeInTheDocument()
   })
 
   it('renders a not-found page for unknown paths', () => {

@@ -1,4 +1,7 @@
+import { Suspense } from 'react'
 import { Link, Outlet } from 'react-router'
+
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { DataBadge } from './DataBadge'
 import { Footer } from './Footer'
@@ -32,7 +35,9 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto w-full max-w-content flex-1 px-4 py-6 sm:px-6">
-        <Outlet />
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <Footer />
@@ -45,5 +50,14 @@ function BrandMark() {
     <svg viewBox="0 0 16 16" className="size-4 text-forecast" aria-hidden="true">
       <path d="M15 1v14H1z" fill="currentColor" />
     </svg>
+  )
+}
+
+function PageFallback() {
+  return (
+    <div aria-busy="true" aria-label="Loading page">
+      <Skeleton className="mb-6 h-12 w-80 max-w-full" />
+      <Skeleton className="h-64 w-full" />
+    </div>
   )
 }
