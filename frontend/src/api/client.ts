@@ -12,4 +12,41 @@ export const api = createClient<paths>({
   fetch: (request) => globalThis.fetch(request),
 })
 
-export type Health = components['schemas']['HealthResponse']
+type Schemas = components['schemas']
+export type Health = Schemas['HealthResponse']
+export type Meta = Schemas['MetaResponse']
+export type MonitorData = Schemas['MonitorResponse']
+export type DecisionData = Schemas['DecisionResponse']
+export type AccuracyData = Schemas['AccuracyResponse']
+export type Metrics = Schemas['Metrics']
+export type ErrorBody = Schemas['ErrorResponse']
+
+/** An API failure carrying the server's error envelope (or a network failure). */
+export class ApiError extends Error {
+  readonly status: number | null
+  readonly code: string
+
+  constructor(message: string, status: number | null, code: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
+function isErrorBody(value: unknown): value is ErrorBody {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'error' in value &&
+    typeof (value as { error: unknown }).error === 'object'
+  )
+}
+
+/** Unwrap an openapi-fetch result: return `data`, or throw an `ApiError`. */
+export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
+  if (result.data !== undefined) return result.data
+  const { error, response } = result
+  if (isErrorBody(error)) throw new ApiError(error.error.message, response.status, error.error.code)
+  throw new ApiError(`Request failed (${response.status})`, response.status, 'http_error')
+}
