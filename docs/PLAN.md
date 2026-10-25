@@ -23,23 +23,23 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 
 **Goal:** a trivial version of the final topology works locally, in Docker and on Vercel *before* any feature work.
 
-- [ ] 0.1 Read `CLAUDE.md` and every file in `docs/`. Start the `PROGRESS.md` log.
-- [ ] 0.2 Python project at the repo root (`pyproject.toml`, name `winddesk`, `requires-python = ">=3.12,<3.13"`, hatchling packages `backend/winddesk`).
+- [x] 0.1 Read `CLAUDE.md` and every file in `docs/`. Start the `PROGRESS.md` log.
+- [x] 0.2 Python project at the repo root (`pyproject.toml`, name `winddesk`, `requires-python = ">=3.12,<3.13"`, hatchling packages `backend/winddesk`).
   - Runtime deps: `fastapi`, `uvicorn[standard]`, `pydantic-settings`, `pandas`, `numpy`, `pyarrow`, `httpx`.
   - `[dependency-groups] dev`: `pytest`, `pytest-cov`, `ruff`, `mypy`, `pandas-stubs`, `jupyter`, `nbconvert`, `matplotlib`, `pre-commit`.
   - Run `uv lock` and commit `uv.lock`. Do **not** create `requirements.txt`.
-- [ ] 0.3 `backend/winddesk/main.py`: `create_app()` with `GET /api/health`. Serve the SPA via `app.frontend("/", directory="frontend/dist", fallback="index.html")`, falling back to StaticFiles + catch-all if unavailable (ARCHITECTURE §4). If `frontend/dist` is missing in dev, log and skip. Use **relative imports** inside `winddesk`.
-- [ ] 0.4 Frontend in `frontend/`: Vite `react-ts`, Tailwind v4, shadcn/ui (use non-interactive flags), IBM Plex fonts, tokens from UI_SPEC §1, React Router with 4 placeholder pages, the AppShell, and a footer that shows `/api/health` (version + snapshot). Vite proxy `/api` → `http://localhost:8000`.
-- [ ] 0.5 Tooling: ruff/mypy/pytest config in `pyproject.toml`; ESLint (flat) + Prettier; Vitest; `.pre-commit-config.yaml`; `.editorconfig`. Create the `Makefile` with every target in ARCHITECTURE §7.
-- [ ] 0.6 `Dockerfile` (multi-stage), `.dockerignore`, `docker-compose.yml` (`app` + `dev` profile). Verify `docker compose up --build` serves the SPA and `/api/health` on :8000.
-- [ ] 0.7 `.github/workflows/ci.yml`: backend, frontend and docker-build jobs.
-- [ ] 0.8 Vercel config per ARCHITECTURE §6.1 (`[tool.vercel]` in pyproject, `vercel.json`).
+- [x] 0.3 `backend/winddesk/main.py`: `create_app()` with `GET /api/health`. Serve the SPA via `app.frontend("/", directory="frontend/dist", fallback="index.html")`, falling back to StaticFiles + catch-all if unavailable (ARCHITECTURE §4). If `frontend/dist` is missing in dev, log and skip. Use **relative imports** inside `winddesk`.
+- [x] 0.4 Frontend in `frontend/`: Vite `react-ts`, Tailwind v4, shadcn/ui (use non-interactive flags), IBM Plex fonts, tokens from UI_SPEC §1, React Router with 4 placeholder pages, the AppShell, and a footer that shows `/api/health` (version + snapshot). Vite proxy `/api` → `http://localhost:8000`.
+- [x] 0.5 Tooling: ruff/mypy/pytest config in `pyproject.toml`; ESLint (flat) + Prettier; Vitest; `.pre-commit-config.yaml`; `.editorconfig`. Create the `Makefile` with every target in ARCHITECTURE §7.
+- [x] 0.6 `Dockerfile` (multi-stage), `.dockerignore`, `docker-compose.yml` (`app` + `dev` profile). Verify `docker compose up --build` serves the SPA and `/api/health` on :8000.
+- [x] 0.7 `.github/workflows/ci.yml`: backend, frontend and docker-build jobs.
+- [x] 0.8 Vercel config per ARCHITECTURE §6.1 (`[tool.vercel]` in pyproject, `vercel.json`).
 - [ ] 0.9 👤 Ask the human to:
   - (a) create a **public GitHub repo with the random name** from `setup.sh` and push;
   - (b) import it into Vercel (Hobby);
   - (c) share the production URL and, if the build fails, the build log.
   
-  Then verify **in a cold/incognito context** (`curl` is fine): `/` returns the SPA, `/monitor` returns the SPA (deep link), and `/api/health` returns JSON. Iterate with the fallback shim if needed. Record exactly what worked in `PROGRESS.md` and fix ARCHITECTURE §6.1 to match.
+  Then verify **in a cold/incognito context** (`curl` is fine, with `-H 'Accept: text/html'` for the SPA paths, see ARCHITECTURE §4): `/` returns the SPA, `/monitor` returns the SPA (deep link), and `/api/health` returns JSON. Iterate with the fallback shim if needed. Record exactly what worked in `PROGRESS.md` and fix ARCHITECTURE §6.1 to match.
 
 **DoD:** `make check` is green · `docker compose up` works · the production URL passes the 3 checks · CI is green.
 
