@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Forecast error statistics, buffers, calibration and the value of the forecast */
+        get: operations["get_accuracy_api_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The forecast available at the auction cutoff, firm wind, and (for hindsight) actuals */
+        get: operations["get_decision_api_decision_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -21,10 +55,453 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bounds, presets, defaults and data quality (UI bootstrap) */
+        get: operations["get_meta_api_meta_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/monitor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Actual vs the latest forecast published at least horizon_h before each hour */
+        get: operations["get_monitor_api_monitor_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccuracyParams */
+        AccuracyParams: {
+            /**
+             * Auction
+             * @enum {string}
+             */
+            auction: "epex" | "n2ex";
+            /** Confidence */
+            confidence: number;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Horizon H */
+            horizon_h: number;
+            /**
+             * Population
+             * @enum {string}
+             */
+            population: "decision" | "horizon";
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
+        /** AccuracyResponse */
+        AccuracyResponse: {
+            auction_comparison: components["schemas"]["AuctionComparison"];
+            /** By Hour */
+            by_hour: components["schemas"]["HourStats"][];
+            /** By Level */
+            by_level: components["schemas"]["LevelStats"][];
+            /** @description Decision population only. */
+            calibration: components["schemas"]["Calibration"] | null;
+            /** Daily */
+            daily: components["schemas"]["DailyStats"][];
+            /**
+             * Decision Lead Window H
+             * @description [min, max] lead of the selected population, e.g. [16.5, 39.5].
+             */
+            decision_lead_window_h: number[] | null;
+            distribution: components["schemas"]["Distribution"];
+            /** @description Decision population only. */
+            forecast_value: components["schemas"]["ForecastValue"] | null;
+            headline: components["schemas"]["Metrics"];
+            /**
+             * Lead Curve
+             * @description Error by actual lead time over all pairs (1 h bins).
+             */
+            lead_curve: components["schemas"]["LeadBin"][];
+            params: components["schemas"]["AccuracyParams"];
+            /** Takeaways */
+            takeaways: string[];
+            /** Worst */
+            worst: components["schemas"]["WorstHour"][];
+        };
+        /** Auction */
+        Auction: {
+            /**
+             * Cutoff Local
+             * @description Gate closure on D−1, UK time (HH:MM).
+             * @example 09:20
+             */
+            cutoff_local: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "epex" | "n2ex";
+            /**
+             * Label
+             * @example EPEX SPOT GB Day-Ahead
+             */
+            label: string;
+        };
+        /** AuctionComparison */
+        AuctionComparison: {
+            epex: components["schemas"]["Metrics"];
+            /**
+             * Mae Change Pct
+             * @description 100 × (MAE_n2ex − MAE_epex) / MAE_epex.
+             */
+            mae_change_pct: number | null;
+            n2ex: components["schemas"]["Metrics"];
+        };
+        /** Bounds */
+        Bounds: {
+            /**
+             * Delivery From
+             * Format: date
+             * @description First in-scope delivery day.
+             */
+            delivery_from: string;
+            /**
+             * Delivery To
+             * Format: date
+             * @description Last in-scope delivery day (inclusive).
+             */
+            delivery_to: string;
+            /**
+             * Target From
+             * Format: date-time
+             * @description First target time in the data (inclusive).
+             */
+            target_from: string;
+            /**
+             * Target To
+             * Format: date-time
+             * @description End of the data (exclusive): Monitor `end` may be at most this.
+             */
+            target_to: string;
+        };
+        /** BufferBin */
+        BufferBin: {
+            /** Buffer Mw */
+            buffer_mw: number;
+            /**
+             * Fallback
+             * @description True when n < 30 and the flat buffer is used instead.
+             */
+            fallback: boolean;
+            /** Forecast From Mw */
+            forecast_from_mw: number;
+            /**
+             * Forecast To Mw
+             * @description null = open-ended (highest bin).
+             */
+            forecast_to_mw: number | null;
+            /**
+             * N
+             * @description Training hours (other days) in the bin.
+             */
+            n: number;
+        };
+        /** Buffers */
+        Buffers: {
+            /** Bins */
+            bins: components["schemas"]["BufferBin"][];
+            /** Confidence */
+            confidence: number;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "simple_lodo" | "conditional_lodo";
+            /**
+             * Simple Buffer Mw
+             * @description The flat leave-one-day-out buffer (MW).
+             */
+            simple_buffer_mw: number;
+        };
+        /** Calibration */
+        Calibration: {
+            /** Achieved Pct */
+            achieved_pct: number | null;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "simple_lodo" | "conditional_lodo";
+            /** Target Pct */
+            target_pct: number;
+        };
+        /** Coverage */
+        Coverage: {
+            /** Pct */
+            pct: number | null;
+            /** Target Hours */
+            target_hours: number;
+            /** With Forecast */
+            with_forecast: number;
+        };
+        /** Cutoff */
+        Cutoff: {
+            /**
+             * Auction
+             * @enum {string}
+             */
+            auction: "epex" | "n2ex" | "custom";
+            /**
+             * Local
+             * @description Gate closure, UK time (HH:MM) on D−1.
+             * @example 09:20
+             */
+            local: string;
+            /**
+             * Utc
+             * Format: date-time
+             */
+            utc: string;
+        };
+        /** DailyStats */
+        DailyStats: {
+            /** Bias Mw */
+            bias_mw: number | null;
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /** Mae Mw */
+            mae_mw: number | null;
+            /** Max Shortfall Mw */
+            max_shortfall_mw: number | null;
+        };
+        /** DecisionForecastPoint */
+        DecisionForecastPoint: {
+            /**
+             * Firm Mw
+             * @description Firm wind at the chosen confidence (MW).
+             */
+            firm_mw: number | null;
+            /** Lead H */
+            lead_h: number | null;
+            /**
+             * Mw
+             * @description Decision-run forecast (MW).
+             */
+            mw: number | null;
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+        };
+        /** DecisionKpis */
+        DecisionKpis: {
+            /**
+             * Actual Mwh
+             * @description Actual energy for the day (MWh).
+             */
+            actual_mwh: number | null;
+            /** Avg Buffer Mw */
+            avg_buffer_mw: number | null;
+            /** Avg Firm Mw */
+            avg_firm_mw: number | null;
+            /** Bias Mw */
+            bias_mw: number | null;
+            /**
+             * Energy Error Pct
+             * @description 100 × (forecast − actual) / forecast energy; positive = shortfall.
+             */
+            energy_error_pct: number | null;
+            /**
+             * Firm Hours Kept
+             * @description Hours where actual ≥ firm wind.
+             */
+            firm_hours_kept: number;
+            /** Firm Hours Total */
+            firm_hours_total: number;
+            /**
+             * Forecast Mwh
+             * @description Forecast energy for the day; null if partial.
+             */
+            forecast_mwh: number | null;
+            /** Mae Mw */
+            mae_mw: number | null;
+            /** Max Shortfall At */
+            max_shortfall_at: string | null;
+            /** Max Shortfall Mw */
+            max_shortfall_mw: number | null;
+        };
+        /** DecisionResponse */
+        DecisionResponse: {
+            /**
+             * Actual
+             * @description Half-hourly actuals (shown in Hindsight only).
+             */
+            actual: components["schemas"]["TimeValue"][];
+            buffers: components["schemas"]["Buffers"];
+            cutoff: components["schemas"]["Cutoff"];
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /** Forecast */
+            forecast: components["schemas"]["DecisionForecastPoint"][];
+            kpis: components["schemas"]["DecisionKpis"];
+            run: components["schemas"]["DecisionRunInfo"];
+            /**
+             * Summary
+             * @description Templated summary including the outcome (Hindsight view).
+             */
+            summary: string;
+            /**
+             * Summary Trader
+             * @description The same summary without any outcome (Trader view).
+             */
+            summary_trader: string;
+            /** Vintages */
+            vintages: components["schemas"]["Vintage"][];
+        };
+        /** DecisionRunInfo */
+        DecisionRunInfo: {
+            /** Lead Max H */
+            lead_max_h: number | null;
+            /** Lead Min H */
+            lead_min_h: number | null;
+            /**
+             * Missing Hours
+             * @description Hours shown as gaps (never substituted).
+             */
+            missing_hours: string[];
+            /**
+             * Partial
+             * @description True when the run leaves some hours of the day uncovered.
+             */
+            partial: boolean;
+            /**
+             * Publish Time
+             * @description The run used: the latest published at or before the cutoff.
+             */
+            publish_time: string | null;
+        };
+        /** Defaults */
+        Defaults: {
+            /**
+             * Auction
+             * @enum {string}
+             */
+            auction: "epex" | "n2ex";
+            /** Confidence */
+            confidence: number;
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /**
+             * Monitor End
+             * Format: date-time
+             */
+            monitor_end: string;
+            /**
+             * Monitor Start
+             * Format: date-time
+             */
+            monitor_start: string;
+        };
+        /** Distribution */
+        Distribution: {
+            /** Bin Edges Mw */
+            bin_edges_mw: number[];
+            /** Counts */
+            counts: number[];
+            /** P10 Mw */
+            p10_mw: number | null;
+            /** P50 Mw */
+            p50_mw: number | null;
+            /** P90 Mw */
+            p90_mw: number | null;
+        };
+        /** ErrorBody */
+        ErrorBody: {
+            /**
+             * Code
+             * @example invalid_params
+             */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            }[];
+            /** Message */
+            message: string;
+        };
+        /** ErrorResponse */
+        ErrorResponse: {
+            error: components["schemas"]["ErrorBody"];
+        };
+        /** ForecastRuns */
+        ForecastRuns: {
+            /** Count */
+            count: number;
+            /**
+             * Off Schedule
+             * @description Runs published outside the nominal schedule (kept as published).
+             */
+            off_schedule: string[];
+            /**
+             * Run Times Utc
+             * @description Nominal publish schedule (HH:MM UTC).
+             * @example [
+             *       "02:30",
+             *       "04:30"
+             *     ]
+             */
+            run_times_utc: string[];
+        };
+        /** ForecastValue */
+        ForecastValue: {
+            /**
+             * Avg Forecast Firm Mw
+             * @description Mean LODO firm wind with the forecast.
+             */
+            avg_forecast_firm_mw: number | null;
+            /** Confidence */
+            confidence: number;
+            /** Gain Mw */
+            gain_mw: number | null;
+            /**
+             * Unconditional Firm Mw
+             * @description P(1 − c) of actual: firm with no forecast.
+             */
+            unconditional_firm_mw: number | null;
+        };
         /** HealthResponse */
         HealthResponse: {
             /**
@@ -36,7 +513,7 @@ export interface components {
             /**
              * Snapshot Id
              * @description First 12 hex chars of the snapshot hash; `null` before the first ingest.
-             * @example a1b2c3d4e5f6
+             * @example ac22a4140bca
              */
             snapshot_id: string | null;
             /**
@@ -52,6 +529,343 @@ export interface components {
              */
             version: string;
         };
+        /** Horizon */
+        Horizon: {
+            /** Default H */
+            default_h: number;
+            /** Max H */
+            max_h: number;
+            /** Min H */
+            min_h: number;
+            /** Step H */
+            step_h: number;
+        };
+        /** HourStats */
+        HourStats: {
+            /** Bias Mw */
+            bias_mw: number | null;
+            /** Hour Uk */
+            hour_uk: number;
+            /** Mae Mw */
+            mae_mw: number | null;
+            /** N */
+            n: number;
+            /** P90 Shortfall Mw */
+            p90_shortfall_mw: number | null;
+        };
+        /** LeadBin */
+        LeadBin: {
+            /** Bias Mw */
+            bias_mw: number | null;
+            /**
+             * Lead H
+             * @description Bin midpoint (h); bins are [lead_h − 0.5, lead_h + 0.5).
+             */
+            lead_h: number;
+            /** Mae Mw */
+            mae_mw: number | null;
+            /** N */
+            n: number;
+            /** P50 Abs Mw */
+            p50_abs_mw: number | null;
+            /** P90 Abs Mw */
+            p90_abs_mw: number | null;
+            /** P99 Abs Mw */
+            p99_abs_mw: number | null;
+            /** Rmse Mw */
+            rmse_mw: number | null;
+        };
+        /** LevelStats */
+        LevelStats: {
+            /**
+             * Achieved Pct
+             * @description LODO firm-wind coverage in the bin (decision only).
+             */
+            achieved_pct: number | null;
+            /** Bias Mw */
+            bias_mw: number | null;
+            /** Forecast From Mw */
+            forecast_from_mw: number;
+            /** Forecast To Mw */
+            forecast_to_mw: number | null;
+            /** Mae Mw */
+            mae_mw: number | null;
+            /** N */
+            n: number;
+            /** P80 Shortfall Mw */
+            p80_shortfall_mw: number | null;
+            /** P90 Shortfall Mw */
+            p90_shortfall_mw: number | null;
+            /** P95 Shortfall Mw */
+            p95_shortfall_mw: number | null;
+        };
+        /** MetaResponse */
+        MetaResponse: {
+            /** Auctions */
+            auctions: components["schemas"]["Auction"][];
+            bounds: components["schemas"]["Bounds"];
+            /**
+             * Confidences
+             * @example [
+             *       0.8,
+             *       0.9,
+             *       0.95
+             *     ]
+             */
+            confidences: number[];
+            defaults: components["schemas"]["Defaults"];
+            forecast_runs: components["schemas"]["ForecastRuns"];
+            horizon: components["schemas"]["Horizon"];
+            /**
+             * Product
+             * @constant
+             */
+            product: "WindDesk";
+            quality: components["schemas"]["Quality"];
+            rows: components["schemas"]["RowCounts"];
+            snapshot: components["schemas"]["SnapshotInfo"];
+        };
+        /**
+         * Metrics
+         * @description Error metrics over a set of forecast/actual pairs. ``error = forecast − actual``. All fields
+         *     except ``n`` are null when ``n = 0``.
+         */
+        Metrics: {
+            /**
+             * Bias Mw
+             * @description Mean error (MW); positive = over-forecast.
+             */
+            bias_mw: number | null;
+            /**
+             * Mae Mw
+             * @description Mean absolute error (MW).
+             * @example 2021.9
+             */
+            mae_mw: number | null;
+            /**
+             * Max Shortfall At
+             * @description Target time of the largest shortfall.
+             */
+            max_shortfall_at: string | null;
+            /**
+             * Max Shortfall Mw
+             * @description Largest over-forecast, floored at 0 (MW).
+             */
+            max_shortfall_mw: number | null;
+            /**
+             * N
+             * @description Pairs with both a forecast and an actual.
+             * @example 744
+             */
+            n: number;
+            /**
+             * P50 Abs Mw
+             * @description Median absolute error (MW).
+             */
+            p50_abs_mw: number | null;
+            /**
+             * P90 Abs Mw
+             * @description 90th percentile of absolute error (MW).
+             */
+            p90_abs_mw: number | null;
+            /**
+             * P90 Shortfall Mw
+             * @description max(90th percentile of error, 0): the shortfall covered in 90% of hours (MW).
+             */
+            p90_shortfall_mw: number | null;
+            /**
+             * P99 Abs Mw
+             * @description 99th percentile of absolute error (MW).
+             */
+            p99_abs_mw: number | null;
+            /**
+             * Rmse Mw
+             * @description Root mean squared error (MW).
+             */
+            rmse_mw: number | null;
+            /**
+             * Wape Pct
+             * @description 100 × Σ|error| / Σ actual (%).
+             */
+            wape_pct: number | null;
+        };
+        /** MonitorForecastPoint */
+        MonitorForecastPoint: {
+            /**
+             * Lead H
+             * @description Exact lead time of the value used (h), ≥ horizon_h.
+             */
+            lead_h: number | null;
+            /**
+             * Mw
+             * @description Forecast (MW); null when no run qualifies at this horizon.
+             */
+            mw: number | null;
+            /**
+             * Publish Time
+             * @description Publish time of the run used.
+             */
+            publish_time: string | null;
+            /**
+             * T
+             * Format: date-time
+             * @description Hourly target time (UTC).
+             */
+            t: string;
+        };
+        /** MonitorParams */
+        MonitorParams: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Horizon H */
+            horizon_h: number;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+        };
+        /** MonitorResponse */
+        MonitorResponse: {
+            /**
+             * Actual
+             * @description Half-hourly actuals in [start, end).
+             */
+            actual: components["schemas"]["TimeValue"][];
+            coverage: components["schemas"]["Coverage"];
+            /**
+             * Forecast
+             * @description One entry per hourly target.
+             */
+            forecast: components["schemas"]["MonitorForecastPoint"][];
+            metrics: components["schemas"]["Metrics"];
+            params: components["schemas"]["MonitorParams"];
+        };
+        /** Quality */
+        Quality: {
+            /** Checks */
+            checks: components["schemas"]["QualityCheck"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "warn";
+            summary: components["schemas"]["QualitySummary"];
+        };
+        /** QualityCheck */
+        QualityCheck: {
+            /** Id */
+            id: string;
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "warn";
+        };
+        /** QualitySummary */
+        QualitySummary: {
+            /** Actual Duplicates Removed */
+            actual_duplicates_removed: number;
+            /** Actual Rows */
+            actual_rows: number;
+            /** Forecast Duplicates Removed */
+            forecast_duplicates_removed: number;
+            /** Forecast Rows */
+            forecast_rows: number;
+            /** Forecast Runs */
+            forecast_runs: number;
+            /** Missing Periods */
+            missing_periods: number;
+        };
+        /** RowCounts */
+        RowCounts: {
+            /** Actuals */
+            actuals: number;
+            /** Forecasts */
+            forecasts: number;
+        };
+        /** SnapshotInfo */
+        SnapshotInfo: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+        };
+        /** TimeValue */
+        TimeValue: {
+            /**
+             * Mw
+             * @description Power (MW); null = no value.
+             */
+            mw: number | null;
+            /**
+             * T
+             * Format: date-time
+             * @description Target time (UTC).
+             */
+            t: string;
+        };
+        /** Vintage */
+        Vintage: {
+            /**
+             * After Cutoff
+             * @description Published after the cutoff: not available at decision.
+             */
+            after_cutoff: boolean;
+            /** Is Decision Run */
+            is_decision_run: boolean;
+            /** Points */
+            points: components["schemas"]["VintagePoint"][];
+            /**
+             * Publish Time
+             * Format: date-time
+             */
+            publish_time: string;
+        };
+        /** VintagePoint */
+        VintagePoint: {
+            /** Mw */
+            mw: number;
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+        };
+        /** WorstHour */
+        WorstHour: {
+            /** Actual Mw */
+            actual_mw: number;
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /** Error Mw */
+            error_mw: number;
+            /** Forecast Mw */
+            forecast_mw: number;
+            /** Lead H */
+            lead_h: number;
+            /**
+             * Publish Time
+             * Format: date-time
+             */
+            publish_time: string;
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -61,6 +875,100 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_accuracy_api_accuracy_get: {
+        parameters: {
+            query?: {
+                /** @description decision = what the desk had at the cutoff; horizon = fixed H. */
+                population?: "decision" | "horizon";
+                /** @description Auction for population=decision. */
+                auction?: "epex" | "n2ex";
+                /** @description Horizon in hours, 0–48 in 0.5 h steps. */
+                horizon_h?: number;
+                /** @description First delivery day. */
+                start?: string;
+                /** @description Last delivery day (inclusive). */
+                end?: string;
+                /** @description Firm-wind confidence: 0.8, 0.9 or 0.95. */
+                confidence?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccuracyResponse"];
+                };
+            };
+            /** @description Not modified (ETag matched) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_decision_api_decision_get: {
+        parameters: {
+            query?: {
+                /** @description UK delivery day, 2026-01-02 … 2026-02-01. */
+                delivery_date?: string;
+                /** @description Auction preset, or custom cutoff. */
+                auction?: "epex" | "n2ex" | "custom";
+                /** @description Custom gate closure on D−1, UK time HH:MM in 15-minute steps. Required when auction=custom; ignored otherwise. */
+                cutoff?: string | null;
+                /** @description Firm-wind confidence: 0.8, 0.9 or 0.95. */
+                confidence?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionResponse"];
+                };
+            };
+            /** @description Not modified (ETag matched) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -77,6 +985,85 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_meta_api_meta_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetaResponse"];
+                };
+            };
+            /** @description Not modified (ETag matched) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_monitor_api_monitor_get: {
+        parameters: {
+            query?: {
+                /** @description Window start, UTC ISO-8601 (inclusive). */
+                start?: string;
+                /** @description Window end, UTC ISO-8601 (exclusive); span ≤ 35 days. */
+                end?: string;
+                /** @description Horizon in hours, 0–48 in 0.5 h steps. */
+                horizon_h?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitorResponse"];
+                };
+            };
+            /** @description Not modified (ETag matched) */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

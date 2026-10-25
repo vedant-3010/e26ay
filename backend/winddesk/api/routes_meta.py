@@ -1,11 +1,17 @@
-"""``/api/health`` (and ``/api/meta`` from Phase 4)."""
+"""``/api/health`` and ``/api/meta``."""
 
-from fastapi import APIRouter, Response
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Request, Response
 
 from .. import __version__
 from ..config import get_settings
+from ..services.meta import meta
 from ..snapshot import read_snapshot_id
-from .schemas import HealthResponse
+from ..store import DataStore
+from .caching import cached_json
+from .deps import store_dep
+from .schemas import ErrorResponse, HealthResponse, MetaResponse
 
 router = APIRouter()
 
@@ -20,3 +26,13 @@ def health(response: Response) -> HealthResponse:
     return HealthResponse(
         status="ok", snapshot_id=snapshot_id, git_sha=settings.git_sha, version=__version__
     )
+
+
+@router.get(
+    "/meta",
+    response_model=MetaResponse,
+    summary="Bounds, presets, defaults and data quality (UI bootstrap)",
+    responses={304: {"description": "Not modified (ETag matched)"}, 500: {"model": ErrorResponse}},
+)
+def get_meta(request: Request, store: Annotated[DataStore, Depends(store_dep)]) -> Response:
+    return cached_json(request, meta(store), snapshot_id=store.snapshot_id, key="meta")

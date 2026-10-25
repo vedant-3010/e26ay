@@ -14,7 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 
 from . import __version__
-from .api import routes_meta
+from .api import routes_accuracy, routes_decision, routes_meta, routes_monitor
 from .api.errors import install_error_handlers
 from .config import get_settings
 from .logs import configure_logging
@@ -62,6 +62,9 @@ def create_app() -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(routes_meta.router, prefix="/api", tags=["meta"])
+    app.include_router(routes_monitor.router, prefix="/api", tags=["monitor"])
+    app.include_router(routes_decision.router, prefix="/api", tags=["decision"])
+    app.include_router(routes_accuracy.router, prefix="/api", tags=["accuracy"])
 
     # Unknown /api paths must 404 as JSON rather than fall through to the SPA's index.html.
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
