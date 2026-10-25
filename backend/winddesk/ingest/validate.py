@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Any, Literal
 
-from ..analytics.pilot import AuctionPreset
+from ..analytics.pilot import NOMINAL_RUN_TIMES_UTC, AuctionPreset
 from ..analytics.selection import select_decision_run
 from ..analytics.timeutil import decision_cutoff_utc, delivery_day_targets, utc_iso
 from .normalize import NormalizedActuals, NormalizedForecasts
@@ -19,7 +19,7 @@ Status = Literal["ok", "warn"]
 
 EXPECTED_RUNS_PER_DAY = 8
 EXPECTED_ROWS_PER_RUN = 73
-EXPECTED_RUN_TIMES_UTC = ("02:30", "04:30", "07:30", "09:30", "11:30", "15:30", "18:30", "22:30")
+EXPECTED_RUN_TIMES_UTC = NOMINAL_RUN_TIMES_UTC
 
 
 @dataclass(frozen=True)
