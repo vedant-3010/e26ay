@@ -105,12 +105,12 @@ Three pitch sentences: …
 
 ## Phase 4 — API
 
-- [ ] 4.1 `api/schemas.py`: every model in API.md (Pydantic v2, field descriptions, examples).
-- [ ] 4.2 `services/*`: one function per endpoint, `lru_cache` on normalized primitive params.
-- [ ] 4.3 Routers, `deps.py` (param validation and normalization), `errors.py` (error envelope), `caching.py` (ETag, Cache-Control, 304, `X-Snapshot-Id`).
-- [ ] 4.4 Tests: happy path + 422 per endpoint; 304 on a matching `If-None-Match`; **no look-ahead through the API** (decision `run.publish_time ≤ cutoff.utc` for every in-scope day × preset, marker `snapshot`).
-- [ ] 4.5 `make gen-api`: export `app.openapi()` and run `openapi-typescript` to produce `frontend/src/api/schema.d.ts`. Add the CI freshness check.
-- [ ] 4.6 Time each endpoint locally (warm). Each must be < 100 ms.
+- [x] 4.1 `api/schemas.py`: every model in API.md (Pydantic v2, field descriptions, examples).
+- [x] 4.2 `services/*`: one function per endpoint, `lru_cache` on normalized primitive params.
+- [x] 4.3 Routers, `deps.py` (param validation and normalization), `errors.py` (error envelope), `caching.py` (ETag, Cache-Control, 304, `X-Snapshot-Id`).
+- [x] 4.4 Tests: happy path + 422 per endpoint; 304 on a matching `If-None-Match`; **no look-ahead through the API** (decision `run.publish_time ≤ cutoff.utc` for every in-scope day × preset, marker `snapshot`).
+- [x] 4.5 `make gen-api`: export `app.openapi()` and run `openapi-typescript` to produce `frontend/src/api/schema.d.ts`. Add the CI freshness check.
+- [x] 4.6 Time each endpoint locally (warm). Each must be < 100 ms.
 
 **DoD:** OpenAPI docs render at `/api/docs` · all API tests pass · types generated and committed.
 

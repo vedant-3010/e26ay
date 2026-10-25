@@ -9,7 +9,9 @@ FastAPI serves everything under `/api`. The OpenAPI document is at `/api/openapi
 - Power in **MW**, energy in **MWh**. Floats are rounded to 1 decimal at the boundary. Missing values are `null`; values are never omitted.
 - Field names are `snake_case`, with units in the name (`forecast_mw`, `lead_h`).
 - Validation errors return **422** with a body of the form `{"error": {"code": "invalid_params", "message": "...", "details": [...]}}`. A custom exception handler wraps FastAPI's default. Unknown errors return 500 with the same shape and no stack traces.
-- Caching: every data response carries `Cache-Control: public, max-age=300, s-maxage=86400, stale-while-revalidate=604800` and an `ETag` (`"{snapshot_id}-{hash(normalized query)}"`). Honour `If-None-Match` with 304.
+- Caching: every data response carries `Cache-Control: public, max-age=300, s-maxage=86400, stale-while-revalidate=604800` and an `ETag` (`"{snapshot_id}-{first 16 hex of sha256(normalized query)}"`). `If-None-Match` is honoured with 304 (comma lists, `W/` and `*` are accepted). This is done per response, not in middleware (ADR-0002).
+- Parameters are normalized before caching: defaults spelled out and omitted give the same ETag, and parameters that don't apply (e.g. `horizon_h` for `population=decision`) are reset to their defaults.
+- Unknown `/api/*` paths return 404 and wrong methods 405, both in the envelope; unexpected errors return 500 with `code: "internal_error"`.
 - Every response includes the `X-Snapshot-Id` header.
 
 Shared schema `Metrics`:
@@ -35,10 +37,11 @@ Everything the UI needs to bootstrap: bounds, presets, defaults and the data-qua
   "product": "WindDesk",
   "snapshot": {"id": "a1b2c3d4e5f6", "created_at": "2026-10-25T12:00:00Z"},
   "bounds": {
-    "target_from": "2026-01-01T00:00:00Z", "target_to": "2026-02-01T23:30:00Z",
+    "target_from": "2026-01-01T00:00:00Z", "target_to": "2026-02-02T00:00:00Z",
     "delivery_from": "2026-01-02", "delivery_to": "2026-02-01"
   },
-  "forecast_runs": {"count": 272, "run_times_utc": ["02:30","04:30","07:30","09:30","11:30","15:30","18:30","22:30"]},
+  "forecast_runs": {"count": 272, "run_times_utc": ["02:30","04:30","07:30","09:30","11:30","15:30","18:30","22:30"],
+                    "off_schedule": ["2026-01-15T12:25:00Z"]},
   "rows": {"actuals": 1536, "forecasts": 14847},
   "auctions": [
     {"id": "epex", "label": "EPEX SPOT GB Day-Ahead", "cutoff_local": "09:20"},
@@ -48,19 +51,24 @@ Everything the UI needs to bootstrap: bounds, presets, defaults and the data-qua
   "horizon": {"min_h": 0, "max_h": 48, "step_h": 0.5, "default_h": 24},
   "defaults": {"delivery_date": "2026-01-15", "auction": "epex", "confidence": 0.9,
                "monitor_start": "2026-01-02T00:00:00Z", "monitor_end": "2026-01-09T00:00:00Z"},
-  "quality": {"status": "ok", "checks": [{"id": "runs_per_day", "status": "ok", "message": "8 runs on every day"}]}
+  "quality": {"status": "warn",
+              "summary": {"forecast_runs": 272, "forecast_rows": 14847, "forecast_duplicates_removed": 0,
+                          "actual_rows": 1536, "actual_duplicates_removed": 0, "missing_periods": 0},
+              "checks": [{"id": "runs_per_day", "status": "ok", "message": "8 runs on every one of 34 publish days"}]}
 }
 ```
-`forecast_runs.run_times_utc` is the **nominal** schedule. Runs published at other times (in the pilot, one: 2026-01-15 12:25 UTC) are listed by the `run_times` quality check (DATA §1.2). `rows` and `forecast_runs.count` above are the real Phase 1 snapshot figures.
+`bounds.target_to` is **exclusive** (the end of the data; the last half-hour starts 2026-02-01T23:30Z). `forecast_runs.run_times_utc` is the **nominal** schedule. Runs published at other times (in the pilot, one: 2026-01-15 12:25 UTC) are listed by the `run_times` quality check (DATA §1.2). `rows` and `forecast_runs.count` above are the real Phase 1 snapshot figures.
 
 ## `GET /api/monitor`
 Actual vs forecast at a fixed horizon (DATA §5.1).
 
 | Param | Type | Rules |
 |---|---|---|
-| `start` | datetime (UTC) | ≥ `target_from` |
-| `end` | datetime (UTC) | ≤ `target_to`, > start, span ≤ 35 days |
-| `horizon_h` | float | 0–48, multiple of 0.5 |
+| `start` | datetime (UTC) | ≥ `target_from`; must carry an offset (`Z`). Default `2026-01-02T00:00:00Z` |
+| `end` | datetime (UTC) | ≤ `target_to`, > start, span ≤ 35 days (the data spans 32, so the whole month fits). Default `2026-01-09T00:00:00Z` |
+| `horizon_h` | float | 0–48, multiple of 0.5. Default 24 |
+
+The window is `[start, end)` for both the hourly forecasts and the half-hourly actuals.
 
 ```json
 {
@@ -78,9 +86,9 @@ The Decision Desk payload for one delivery day (DATA §5.2–5.10, §5.13).
 
 | Param | Type | Rules |
 |---|---|---|
-| `delivery_date` | date | within `delivery_from`…`delivery_to` |
+| `delivery_date` | date | within `delivery_from`…`delivery_to`; default 2026-01-15 |
 | `auction` | `epex` \| `n2ex` \| `custom` | default `epex` |
-| `cutoff` | `HH:MM` | required only when `auction=custom`; 15-min steps |
+| `cutoff` | `HH:MM` | required only when `auction=custom`; 15-min steps; ignored for presets |
 | `confidence` | 0.8 \| 0.9 \| 0.95 | default 0.9 |
 
 ```json
@@ -98,14 +106,15 @@ The Decision Desk payload for one delivery day (DATA §5.2–5.10, §5.13).
     "max_shortfall_mw": 2900.0, "max_shortfall_at": "2026-01-15T18:00:00Z",
     "firm_hours_kept": 22, "firm_hours_total": 24
   },
-  "buffers": {"method": "conditional_lodo", "confidence": 0.9,
-              "bins": [{"forecast_from_mw": 0, "forecast_to_mw": 6000, "buffer_mw": 900.0, "n": 140}]},
+  "buffers": {"method": "conditional_lodo", "confidence": 0.9, "simple_buffer_mw": 4142.0,
+              "bins": [{"forecast_from_mw": 0, "forecast_to_mw": 8200, "buffer_mw": 1888.0, "n": 146, "fallback": false}]},
   "vintages": [{"publish_time": "2026-01-13T22:30:00Z", "is_decision_run": false, "after_cutoff": false,
                 "points": [{"t": "2026-01-15T00:00:00Z", "mw": 12500.0}]}],
-  "summary": "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. …"
+  "summary": "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. …",
+  "summary_trader": "At 09:20 on Wed 14 Jan, the latest forecast expected 412 GWh of wind for Thu 15 Jan. At 90% confidence …"
 }
 ```
-`actual` is always returned. The UI decides whether to show it (Trader view vs Hindsight). `buffers.method` is `conditional_lodo` (implemented in Phase 2). `energy_error_pct = 100 × (forecast − actual) / forecast`, so positive means a shortfall (DATA §5.9).
+`actual` is always returned. The UI decides whether to show it (Trader view vs Hindsight). `summary_trader` is the same text without any outcome sentence, for the Trader view (added in Phase 4). `buffers.method` is `conditional_lodo` (implemented in Phase 2). `energy_error_pct = 100 × (forecast − actual) / forecast`, so positive means a shortfall (DATA §5.9).
 
 ## `GET /api/accuracy`
 Accuracy Lab payload (DATA §5.5–5.12).
@@ -115,7 +124,7 @@ Accuracy Lab payload (DATA §5.5–5.12).
 | `population` | `decision` \| `horizon` | default `decision` |
 | `auction` | `epex` \| `n2ex` | used when population=decision; default `epex` |
 | `horizon_h` | float 0–48 | used when population=horizon; default 24 |
-| `start`, `end` | date | delivery-day range; default = full pilot window |
+| `start`, `end` | date | delivery-day range (inclusive); default = full pilot window; `end ≥ start` |
 | `confidence` | 0.8 \| 0.9 \| 0.95 | default 0.9 |
 
 ```json
@@ -139,7 +148,9 @@ Accuracy Lab payload (DATA §5.5–5.12).
   "forecast_value": {"confidence": 0.9, "unconditional_firm_mw": 4200.0, "avg_forecast_firm_mw": 9800.0, "gain_mw": 5600.0}
 }
 ```
-- `lead_curve` always uses all pairs (DATA §5.6), with 1 h bins. The `population` param does not affect it.
+- `lead_curve` always uses all pairs (DATA §5.6), with 1 h bins, over the selected date range. The `population` param does not affect it.
+- `decision_lead_window_h` is the [min, max] lead of the selected population (e.g. [16.5, 39.5] for EPEX; for `horizon` it is the effective lead range at that H).
+- The date range selects the *evaluated* days. LODO buffers for `calibration`, `by_level[].achieved_pct` and `forecast_value` are still fitted on every other pilot day.
 - `calibration`, `by_level[].achieved_pct` and `forecast_value` are only meaningful for `population=decision`. Return `null` otherwise.
 - Sections marked "Should" in the PRD may return `null` until built. The frontend must handle `null` sections gracefully.
 
@@ -161,3 +172,12 @@ winddesk/api/
   errors.py           # error envelope + handlers
 ```
 Routers are thin. They validate params, call `winddesk/services/*`, and map results to schemas. No pandas code lives in routers.
+
+## Measured performance (Phase 4, local, uvicorn, 2026-10-26)
+| Endpoint | Cold (first call) | Warm (cached) | Size |
+|---|---|---|---|
+| `/api/meta` | 1.7 ms | ≈ 0.5 ms | 2 KB |
+| `/api/monitor` (default week) | 7 ms | ≈ 1.1 ms | 30 KB |
+| `/api/decision` (preset) | 10 ms | ≈ 1.1 ms | 22 KB |
+| `/api/decision` (custom cutoff, first use) | 36 ms | ≈ 1.1 ms | 22 KB |
+| `/api/accuracy` | 22–25 ms | ≈ 0.7 ms | 15 KB |

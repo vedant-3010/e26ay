@@ -10,7 +10,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 1 Data snapshot | ✅ done | ~1.0 h | Snapshot `ac22a4140bca`; 13 contract tests pass; started while Phase 0 waits on Vercel (human said continue) |
 | 2 Analytics core | ✅ done | ~1.25 h | 99.5% analytics coverage; store loads in ~257 ms; calibration within ±5 pp |
 | 3 Notebook + insights | ✅ done | ~0.75 h | Notebook executed with outputs; `INSIGHTS.md` written by it; alignment check changes nothing |
-| 4 API | ⬜ | | |
+| 4 API | ✅ done | ~1.0 h | 5 endpoints; 54 API tests + 15 API contract tests; cold ≤ 36 ms, warm ≈ 1 ms |
 | 5 Frontend + Monitor | ⬜ | | |
 | 6 Decision Desk | ⬜ | | |
 | 7 Accuracy Lab + Methodology | ⬜ | | |
@@ -25,15 +25,48 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 - Video: _(fill in)_
 
 ## Waiting on the human 👤
-1. **Import the repo into Vercel** (Hobby, vercel.com/new → `vedant-3010/e26ay`). Leave the framework preset as detected; `vercel.json` sets the build command. Paste back the production URL (`<project>.vercel.app`), plus the build log if the build fails. As of 2026-10-26 no Vercel project for `e26ay` exists in the connected account.
-2. Then Claude Code checks in a cold context: `curl -H 'Accept: text/html' <url>/` and `<url>/monitor` return the SPA, and `<url>/api/health` returns JSON with `snapshot_id` = `ac22a4140bca`, which proves the snapshot is inside the function bundle.
-3. Commits are approved by the human one batch at a time (standing instruction).
-4. **Read `docs/INSIGHTS.md`**: these are the numbers for the video. Two things to decide before the pitch:
-   - **The systematic over-forecast** (+1,746 MW at the EPEX cutoff, already +1,455 MW only 0.5 h ahead, and rising with wind level). It looks like a level offset between WINDFOR and FUELHH (curtailment, or the two covering different farms), not forecast skill. Elexon's descriptions don't settle it. Suggested framing: "a structural gap we quantify and buffer against; worth confirming with your data team."
-   - **Story-day order for Part 1.** The worst-miss day (Wed 28 Jan) is a 0/24 firm-wind day, honest but hard to open on. Suggestion: open on Tue 27 Jan (buffer did its job: 17% shortfall, firm held 23/24), then show 28 Jan as the honest limit. Decided in Phase 8 when filling `DEMO_SCRIPT.md`.
+1. **Approve Vercel team access for the connector** (one click, link in the chat; it expires after 10 minutes and a new one can be made any time). Then Claude Code creates the Vercel project from `vedant-3010/e26ay` and runs the Phase 0 production checks itself. The alternative is to import the repo at vercel.com/new.
+2. Commits are approved by the human one batch at a time (standing instruction). Pushing is the human's call.
+
+## Decisions taken by Claude Code (the human asked for this on 2026-10-26)
+- **Pitch framing of the over-forecast:** "a structural gap between the two Elexon datasets that we quantify and buffer against, worth confirming with your data team", not "the forecast is bad".
+- **Story-day order for Part 1:** open on **Tue 27 Jan** (the buffer did its job), then **Wed 28 Jan** as the honest limit, with Sat 17 Jan available as the typical day. Applied in Phase 8 when filling `DEMO_SCRIPT.md`.
+- **Default buffer method:** conditional (level-based) LODO, per PRD F4 "Should". The flat-buffer trade-off (−633 MW held back, −1.6 pp coverage at 90%) is stated on the Methodology page.
+- **Deployment:** use the human's connected Vercel account (Hobby, `vedant-3010`) to create the project, because the brief requires a Vercel/Heroku deployment and the repo is already public.
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 4: API ✅
+- **Built:**
+  - `api/schemas.py`: every API.md model, with field descriptions and examples; floats rounded to 1 decimal by an annotated validator; UTC serialised with `Z`.
+  - `services/{meta,monitor,decision,accuracy}.py`: one function per endpoint, `lru_cache`d on (store, normalised primitive params). Each builds the response model; routers contain no pandas.
+  - `api/deps.py`: validated, normalised query objects and `store_dep`, which tests override with the synthetic store.
+  - `api/caching.py`: ETag = `"{snapshot_id}-{sha256(query)[:16]}"`, `Cache-Control`, `X-Snapshot-Id`, 304 handling `W/`, lists and `*`. No middleware, so the CDN promotion of the SPA is kept.
+  - `api/errors.py`: one envelope for 404, 405, 422 (FastAPI's and ours) and 500 (`internal_error`, no internals).
+  - Routers: `/api/meta`, `/api/monitor`, `/api/decision`, `/api/accuracy` (plus the existing `/api/health`). The nominal run schedule now lives in `analytics.pilot`, shared by ingest and meta.
+- **Tests:**
+  - 54 API tests on a synthetic store with hand-derived values: a happy path and a 422 set per endpoint, ETag stability and normalisation, 304, the envelope shape, a 500 that hides internals, and OpenAPI listing every path.
+  - 15 API contract tests on the real snapshot:
+    - **no look-ahead through the API for 31 days × 5 cutoffs** (EPEX, N2EX, 00:00, 10:45, 23:45): run ≤ cutoff, the decision vintage equals the forecast shown, `after_cutoff` flags are exact;
+    - the expected decision runs and lead windows for every day;
+    - the real `/meta` figures;
+    - warm < 100 ms for 8 URLs.
+- **Checks:**
+  - `make check` ✅: **293 pytest**, analytics coverage 99.66%, mypy strict clean (36 files), 11 Vitest, build OK.
+  - `make test-contract` ✅: **143**.
+  - `make gen-api` regenerated `frontend/src/api/schema.d.ts` (1,071 lines, 5 paths).
+  - Timing over HTTP (uvicorn, 5 warm runs each): cold 1.7–36 ms, warm 0.5–1.3 ms. Table in API.md.
+- **Doc changes:**
+  - API.md:
+    - `bounds.target_to` is **exclusive** (2026-02-02T00:00Z; Monitor `end` ≤ it; window `[start, end)`);
+    - `/meta` adds `forecast_runs.off_schedule` and `quality.summary` (for the Methodology data-quality table);
+    - `/decision` adds `summary_trader` (so the Trader view never shows outcome text) plus `buffers.simple_buffer_mw` and `bins[].fallback`; the cutoff is ignored for presets;
+    - `/accuracy` filters the lead curve by date range, and the range selects the evaluated days while LODO still trains on all pilot days;
+    - parameters are normalised for cache and ETag; the 35-day Monitor limit exceeds the 32-day data range;
+    - a measured-performance table.
+  - ARCHITECTURE layer table: services build the `api.schemas` DTOs.
+- **Vercel:** the connected Vercel account is the human's own (`vedant-3010`, Hobby; GitHub integration covers `vedant-3010`). Project access needs a one-time team-scope approval, which is pending (see "Waiting on the human").
 
 ### 2026-10-26 — Phase 3: Analysis notebook and insights ✅
 - **Built:** `notebooks/01_wind_forecast_accuracy.ipynb`, with 11 sections following DATA §8. Each opens with a **Question** and closes with an **Answer** cell generated from the computed values, so the prose can't drift from the numbers. It imports `winddesk.analytics` and `winddesk.store` only; no logic is re-implemented. Static matplotlib figures (11) use the app's semantic colours. It is committed executed (875 KB; no errors or stderr in outputs; nbformat-valid; no local paths). Section 11 writes `docs/INSIGHTS.md`.

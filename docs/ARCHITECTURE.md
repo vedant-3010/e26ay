@@ -131,7 +131,7 @@ Layers (dependencies point downward only):
 | Layer | Responsibility | May import |
 |---|---|---|
 | `api` | HTTP: params, schemas, status codes, headers | services, config |
-| `services` | Orchestrate analytics for a use case; cache by primitive params | analytics, store |
+| `services` | Orchestrate analytics for a use case; cache by primitive params; build the response models | analytics, store, `api.schemas` (plain Pydantic DTOs, no HTTP) |
 | `store` | Load snapshot; build `pairs`, decision pools and calibration at startup | analytics, config |
 | `analytics` | Pure domain functions. No I/O, no FastAPI. | pandas, numpy, stdlib |
 | `ingest` | Offline CLI: fetch, normalize, validate, write snapshot | analytics.timeutil, config |
