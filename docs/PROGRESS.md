@@ -15,7 +15,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 6 Decision Desk | ✅ done | ~1.5 h | F1 ACs 1–9 pass; story days 27/28 Jan checked in both views; app-wide visual refinement |
 | 7 Accuracy Lab + Methodology | ✅ done | ~1.5 h | F3 Must + all 6 Should ACs; F5 complete; all pages 375 px clean |
 | 8 Polish + release | 🟨 code complete | ~1.25 h | 8.1, 8.3, 8.4, 8.6 done; 8.2 measured on the Docker image; slow-4G LCP 1.4–2.1 s; README, demo numbers and `v1.0.0` tag. Waiting on 👤: 8.5 Vercel deploy, video, form |
-| 9 Stretch | ⬜ | | |
+| 9 Stretch | ✅ 3 of 4 | ~1.25 h | F7 what-if, Playwright (desktop + 375 px, own CI job), F8 live mode behind a flag. 9.4 Heroku deploy needs 👤 (account; paid) |
 
 Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
@@ -39,6 +39,32 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 9: Stretch ✅ (items 1–3; item 4 waits on the human)
+- **Started while 8.5 waits on the Vercel import.** The human said "next". Phase 8's only open items are account actions, the same situation as Phase 1 starting while Phase 0 waited.
+- **9.1 F7 procurement what-if** (Decision Desk, both views):
+  - Inputs: flat demand (MW) or 24 pasted hourly values, plus a share of national wind (%).
+  - Readout: demand, what is left to buy at the forecast, what is left at firm wind, and the extra the chosen confidence asks for (MWh).
+  - Chart: stacked hourly bars (slate = at the forecast, amber = extra), demand as a step line, one MW axis.
+  - The pure maths is in `lib/whatIf.ts`. Gap hours are left out of every total. The parser accepts a spreadsheet column with thousands separators or a comma-separated line, and says what is wrong otherwise.
+  - Inputs are local state, not URL state; that decision is logged in UI_SPEC §3.1. Labelled "Illustrative".
+  - Fixed from screenshots: hour labels collided at 375 px → `hideOverlap`.
+- **9.2 Playwright smoke tests** (`make test-e2e`; CI job "End-to-end"):
+  - Runs on FastAPI serving the production build, with two projects: desktop 1280 px and phone 375 px.
+  - Each page loads, one control changes the view (Desk confidence and what-if, Monitor 2 weeks, Accuracy N2EX), and the charts are checked for **painted canvas pixels**.
+  - Every test also fails on console errors or horizontal overflow. Deep links, the JSON 404 and the live-off state are covered.
+  - `make help` now lists targets whose names contain digits.
+- **9.3 F8 live mode** (`WINDDESK_ENABLE_LIVE`, off by default; API.md §live):
+  - `GET /api/live` uses the unchanged decision pipeline. D is tomorrow in UK time, and the cutoff is the fetch time on D−1, floored to 15 minutes, so there is no look-ahead. Buffers are fitted on the pilot pool for that cutoff time.
+  - Runs come from Elexon with a 10 s timeout and one retry, are kept 10 minutes, and nothing is written to disk. Failures return 502 and are not cached. When the flag is off it returns 404.
+  - `/api/meta.live_enabled` drives a Live tab that reuses the Desk's Trader view, with "As of" in place of "Gate closure" and live-specific footnotes.
+  - 12 API tests with a fake Elexon and clock, with hand-computed values (firm = forecast − 1,200 MW; 240,612 MWh).
+  - **Checked once against the real Elexon API:** 0.8 s on the first call and 15 ms cached. As of 14:45 on 26 Oct, Tue 27 Oct is forecast at 521 GWh with 16,347 MW firm at 90%.
+- **9.4 Heroku: not done.** `heroku.yml` is committed and builds the same Dockerfile. Deploying needs a Heroku account, and Heroku has no free tier (CLAUDE.md: no paid services without the human). Vercel stays the primary target.
+- **Checks:**
+  - `make check` ✅: 307 fast pytest (99% analytics coverage) and 103 Vitest. `make test-contract` ✅ 143. `make test-e2e` ✅ 10 (5 tests × 2 projects). `make gen-api-check` ✅.
+  - JS is 396 KB gzipped in total, within the 450 KB budget.
+  - CI was green on all 4 jobs (including the new End-to-end job) on `e7bb905` and on `46be656` (live mode): https://github.com/vedant-3010/e26ay/actions/runs/40344713771
 
 ### 2026-10-26 — Phase 8: Polish, README, release 🟨 (code complete; 8.5 waits on the human)
 - **8.1 UX pass:**

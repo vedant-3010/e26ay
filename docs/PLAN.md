@@ -177,10 +177,10 @@ Three pitch sentences: …
 ---
 
 ## Phase 9 — Stretch (only with time left; in this order)
-1. F7 procurement what-if (client-side only).
-2. Playwright smoke test (load each page, change one control, assert the chart renders).
-3. F8 live mode behind a flag.
-4. Heroku deploy via `heroku.yml`.
+1. F7 procurement what-if (client-side only). ✅
+2. Playwright smoke test (load each page, change one control, assert the chart renders). ✅
+3. F8 live mode behind a flag. ✅
+4. Heroku deploy via `heroku.yml`. 👤 `heroku.yml` is ready; the deploy needs a Heroku account (a paid service).
 
 ---
 
