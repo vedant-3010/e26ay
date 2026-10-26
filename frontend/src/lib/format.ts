@@ -1,5 +1,5 @@
 /**
- * All user-visible number and identifier formatting lives here (CLAUDE.md conventions).
+ * All user-visible number and identifier formatting lives here.
  * Every number shown carries its unit; missing values render as an em dash.
  * Time formatting lives in `time.ts`.
  */

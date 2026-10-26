@@ -13,7 +13,7 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   // A parallel run against a deployment can wake several cold function instances at once;
-  // cold-start time is measured on its own (PROGRESS.md), not by these assertions.
+  // cold-start time is measured separately, not by these assertions.
   expect: { timeout: REMOTE ? 15_000 : 5_000 },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),

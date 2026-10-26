@@ -12,7 +12,7 @@ export default defineConfig({
   },
   build: {
     // The ECharts chunk (~600 KB raw, 200 KB gzipped) is already modular and loads on first chart
-    // mount (EChart.tsx); the JS budget is gzipped size (ARCHITECTURE §7), checked in PROGRESS.
+    // mount (EChart.tsx); the JS budget is gzipped size (ARCHITECTURE §7).
     chunkSizeWarningLimit: 650,
   },
   server: {

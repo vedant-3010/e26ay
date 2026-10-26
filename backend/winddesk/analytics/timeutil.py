@@ -8,7 +8,6 @@ Invariants:
   even though the January pilot is all GMT.
 """
 
-from collections.abc import Iterable
 from datetime import date, datetime, time, timedelta
 from typing import Any, Final
 from zoneinfo import ZoneInfo
@@ -76,7 +75,3 @@ def to_uk_label(ts: pd.Timestamp | datetime, *, with_time: bool = True) -> str:
 def utc_iso(ts: pd.Timestamp) -> str:
     """ISO-8601 UTC with a ``Z`` suffix, as used by the API (``2026-01-15T09:00:00Z``)."""
     return pd.Timestamp(ts).tz_convert("UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def utc_isos(times: Iterable[pd.Timestamp]) -> list[str]:
-    return [utc_iso(t) for t in times]

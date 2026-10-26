@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 /**
- * Smoke tests on the real snapshot (PLAN 9.2): each page loads, one control changes the view, and
+ * Smoke tests on the real snapshot: each page loads, one control changes the view, and
  * the charts actually draw. Every page is also checked for console errors and, on the phone
  * project, for horizontal overflow at 375 px.
  */

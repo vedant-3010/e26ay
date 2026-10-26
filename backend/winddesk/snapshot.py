@@ -1,4 +1,4 @@
-"""Snapshot manifest access (the full ``DataStore`` arrives in Phase 2)."""
+"""Snapshot manifest access; the data itself is loaded by ``store.DataStore``."""
 
 import json
 from pathlib import Path

@@ -1,6 +1,6 @@
 # WindDesk — Data & Analytics Specification
 
-This is the source of truth for ingestion, data contracts, selection logic, metrics and analytics tests. If code and this doc disagree, fix one of them and log it in `PROGRESS.md`.
+This is the source of truth for ingestion, data contracts, selection logic, metrics and analytics tests. If code and this doc disagree, one of them is a bug.
 
 ---
 
@@ -126,7 +126,7 @@ All timestamps are `datetime64[ns, UTC]`. Ensure every timestamp column uses the
 `forecasts ⋈ actuals` on `target_time` (inner), plus:
 `error_mw = forecast_mw − actual_mw`, `abs_error_mw`, `delivery_date` (UK local date of target_time), `hour_uk`.
 
-**Alignment policy (ADR-0004):** forecast hour H is compared with the settlement period **starting** at H, which is a direct `startTime` join, as the brief implies. The notebook reports a sensitivity check that compares against the mean of the two periods in hour H instead. If the conclusions change materially, raise it in `PROGRESS.md`.
+**Alignment policy (ADR-0004):** forecast hour H is compared with the settlement period **starting** at H, which is a direct `startTime` join, as the brief implies. The notebook reports a sensitivity check that compares against the mean of the two periods in hour H instead. It changes MAE by 16 MW, so the conclusions hold.
 
 ---
 
@@ -304,7 +304,7 @@ It imports `winddesk.analytics` (one source of truth) and is committed **execute
 8. Alignment sensitivity: start period vs hourly mean.
 9. Biggest misses: which days, and what the forecast evolution looked like.
 10. Reliability and the value of the forecast (§5.12).
-11. Conclusions. Write the headline numbers to `docs/INSIGHTS.md` (template in PLAN Phase 3). The pitch and the in-app takeaways use them.
+11. Conclusions. Write the headline numbers to `docs/INSIGHTS.md`. The pitch and the in-app takeaways use them.
 
 ---
 

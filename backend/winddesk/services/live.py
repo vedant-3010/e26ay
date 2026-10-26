@@ -1,7 +1,7 @@
 """``/api/live`` (PRD F8, Could; off unless ``WINDDESK_ENABLE_LIVE=true``): tomorrow as of now.
 
 The latest WINDFOR runs are fetched from Elexon at request time, the one documented exception to
-"never call Elexon at request time" (CLAUDE.md), and kept in memory for 10 minutes. The answer is
+"never call Elexon at request time" (ADR-0001), and kept in memory for 10 minutes. The answer is
 built by the Decision Desk pipeline unchanged:
 
 - the delivery day D is tomorrow in UK time, and the "cutoff" is the fetch time on D−1, floored to

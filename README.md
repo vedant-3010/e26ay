@@ -23,7 +23,7 @@
 - **Accuracy Lab:** how wrong the decision forecasts were across the month: MAE, bias, P90 shortfall, error by lead time and by wind level, buffers back-tested without look-ahead, the value of having a forecast at all, and whether the later auction's fresher run is worth it.
 - **Monitor:** actual vs forecast for any window at any horizon from 0 to 48 h. **Methodology** explains every definition and data check.
 
-Two optional extras, added in Phase 9:
+Two optional extras:
 - A **procurement what-if** on the Desk. You enter demand and your share of national wind, and it shows what is left to buy at the forecast and at firm wind. It is illustrative and runs in the browser.
 - A **Live** tab, off by default. It shows tomorrow's forecast as of now, live from Elexon (`WINDDESK_ENABLE_LIVE=true`; see [API.md](docs/API.md)).
 
@@ -80,13 +80,12 @@ No secrets are needed. `.env.example` lists the optional settings. `WINDDESK_ENA
 | `data/snapshot/` | The committed, validated snapshot: `actuals.parquet`, `forecasts.parquet`, `manifest.json` (provenance), `quality.json` (checks) |
 | `data/raw/` | Raw API cache written by `make ingest` (git-ignored) |
 | `notebooks/01_wind_forecast_accuracy.ipynb` | The analysis, executed with outputs. It imports the same analytics functions as the app and writes `docs/INSIGHTS.md` |
-| `docs/` | `PRD.md` (scope), `PLAN.md` (phases), `DATA_AND_ANALYTICS.md` (algorithms), `API.md`, `ARCHITECTURE.md`, `UI_SPEC.md`, `adr/` (decision records), `PROGRESS.md` (log and evidence), `INSIGHTS.md`, `DEMO_SCRIPT.md`, `screenshots/` |
-| `Dockerfile` · `docker-compose.yml` · `heroku.yml` | Production image (Node build stage, then a slim Python runtime) · local run and hot-reload profile · Heroku container fallback |
+| `docs/` | `PRD.md` (scope), `DATA_AND_ANALYTICS.md` (algorithms), `API.md`, `ARCHITECTURE.md`, `UI_SPEC.md`, `adr/` (decision records), `INSIGHTS.md` (findings, written by the notebook), `screenshots/` |
+| `Dockerfile` · `docker-compose.yml` | Production image (Node build stage, then a slim Python runtime) · local run and hot-reload profile |
 | `vercel.json` · `pyproject.toml` `[tool.vercel]` | Vercel build command, function bundle exclusions, and the FastAPI entrypoint |
 | `pyproject.toml` · `uv.lock` | The one Python manifest and lockfile (with ruff, mypy, pytest and coverage config) |
 | `Makefile` | Every command: `setup`, `dev`, `ingest`, `test`, `test-contract`, `lint`, `typecheck`, `gen-api`, `build`, `notebook`, `docker-up`, `check` |
 | `.github/workflows/ci.yml` | CI: backend, frontend and Docker smoke-test jobs |
-| `CLAUDE.md` · `.claude/skills/` | Working rules and phase/verify workflows for Claude Code (see [AI tools used](#ai-tools-used)) |
 | `.pre-commit-config.yaml` · `.editorconfig` · `.python-version` · `.env.example` · `.dockerignore` · `.gitignore` | Tooling and environment config |
 
 ## Architecture
@@ -162,7 +161,7 @@ The full specification is [`docs/DATA_AND_ANALYTICS.md`](docs/DATA_AND_ANALYTICS
 | End-to-end | `make test-e2e`: **Playwright** against FastAPI serving the production build, at desktop width and 375 px. Every page loads, one control changes the view, the charts actually paint, there are no console errors and no horizontal overflow. It runs as its own CI job, and `make test-e2e-prod` runs it against the live URL |
 | Docker | The image is built, run and smoke-tested (`/api/health` and the SPA) in CI |
 
-Measured on the production Docker image (Phase 8; see [`docs/PROGRESS.md`](docs/PROGRESS.md)):
+Measured on the production Docker image:
 
 - **API:** 1–11 ms warm and at most 38 ms cold, against a 300 ms budget.
 - **JS:** about 390 KB gzipped in total (budget 450 KB). The ECharts chunk loads only when a chart mounts.
@@ -181,14 +180,14 @@ docker build -t winddesk --build-arg GIT_SHA=$(git rev-parse --short HEAD) .
 docker run -p 8000:8000 winddesk
 ```
 
-**Heroku (fallback).** `heroku.yml` builds the same Dockerfile: `heroku stack:set container`, then `git push heroku main`.
+The same image runs on any container host that sets `$PORT`, such as Heroku.
 
 ## AI tools used
 
 This project was built with **Claude Code (Anthropic)** under human direction and review.
 
-- **Planning documents:** the PRD, plan, data and analytics spec, API, architecture and UI specs, and the ADRs in `docs/` were drafted with Claude Code from the human's brief. The human then set the scope and the priorities (MoSCoW) and decided the open questions.
-- **Implementation:** Claude Code wrote the code, tests, notebook and docs phase by phase, following `CLAUDE.md` and `docs/PLAN.md`. Each phase ended with its Definition of Done checked and the evidence recorded in [`docs/PROGRESS.md`](docs/PROGRESS.md). The human reviewed and approved the work phase by phase, gave UI feedback, and did all account actions (GitHub, Vercel). From Phase 6 onward, under a standing instruction, Claude Code took and logged routine decisions itself; every one is listed in `PROGRESS.md`.
+- **Planning documents:** the PRD, the data and analytics spec, the API, architecture and UI specs, the ADRs in `docs/`, and a phased build plan were drafted with Claude Code from the human's brief. The human then set the scope and the priorities (MoSCoW) and decided the open questions.
+- **Implementation:** Claude Code wrote the code, tests, notebook and docs phase by phase, following written working rules. Each phase ended with its definition of done checked and the evidence logged. The human reviewed and approved the work phase by phase, gave UI feedback, and did all account actions (GitHub, Vercel). In the later phases, under a standing instruction, Claude Code also took and logged routine implementation decisions itself.
 - **What was verified rather than trusted:**
   - Elexon's API behaviour was probed live before any code was written (DATA §1).
   - Analytics tests use small synthetic datasets whose expected values are worked out by hand in the test, not copied from the code's output.
@@ -206,4 +205,4 @@ This project was built with **Claude Code (Anthropic)** under human direction an
 - **Leave-one-day-out back-test**, not a strictly expanding window. A production version would calibrate on earlier days only.
 - **Symmetric statistics.** A cost-weighted buffer needs the client's imbalance prices.
 
-Next: rolling calibration, portfolio-level data, a buffer weighted by imbalance cost, and scheduled live ingestion with alerts. The ideas backlog is in [`docs/PROGRESS.md`](docs/PROGRESS.md).
+Next: rolling calibration, portfolio-level data, a buffer weighted by imbalance cost, and scheduled live ingestion with alerts.

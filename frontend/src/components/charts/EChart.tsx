@@ -19,7 +19,7 @@ interface Props {
 /**
  * The one ECharts wrapper: init/dispose, resize, option updates, events (no data fetching).
  * The ECharts runtime (~230 KB gzipped) is imported on first mount rather than with the page,
- * so a page's text and figures render while the charts are still loading (PROGRESS, Phase 8).
+ * so a page's text and figures render while the charts are still loading.
  */
 export function EChart({ option, ariaLabel, className, onEvents }: Props) {
   const ref = useRef<HTMLDivElement>(null)

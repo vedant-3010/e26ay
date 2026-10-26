@@ -73,15 +73,13 @@ sequenceDiagram
 
 ```
 <repo>/
-├── CLAUDE.md                     # instructions for Claude Code
-├── README.md                     # submission README (written in Phase 8)
+├── README.md                     # start here
 ├── Makefile                      # single entry point for every task
 ├── pyproject.toml / uv.lock      # Python project, tool config, [tool.vercel]
 ├── .python-version               # 3.12
 ├── vercel.json                   # build command, function config
 ├── Dockerfile                    # multi-stage: build SPA → slim Python runtime
 ├── docker-compose.yml            # `app` (prod image) + `dev` profile (hot reload)
-├── heroku.yml                    # optional fallback deploy (container)
 ├── .github/workflows/ci.yml      # lint · typecheck · test · build · docker build
 ├── .pre-commit-config.yaml
 ├── backend/
@@ -118,7 +116,7 @@ sequenceDiagram
 │       └── styles/globals.css    # design tokens
 ├── notebooks/01_wind_forecast_accuracy.ipynb
 └── docs/                         # PRD, ARCHITECTURE, API, DATA_AND_ANALYTICS, UI_SPEC,
-                                  # PLAN, PROGRESS, INSIGHTS, DEMO_SCRIPT, adr/
+                                  # INSIGHTS, adr/, screenshots/
 ```
 
 ## 4. Backend
@@ -163,7 +161,7 @@ Layers (dependencies point downward only):
 ### 6.1 Vercel (primary: public demo URL)
 One Vercel project imported from the GitHub repo. FastAPI becomes a single Vercel Function. The SPA build is promoted to the CDN.
 
-Config as committed in Phase 0, checked against Vercel's FastAPI docs (updated 2026-08-27). The first real deploy is recorded in `PROGRESS.md`.
+Config as committed in Phase 0, checked against Vercel's FastAPI docs (updated 2026-08-27).
 
 ```toml
 # pyproject.toml
@@ -212,10 +210,7 @@ Gotchas to verify:
 - `docker compose --profile dev up api-dev web-dev` gives hot reload (uvicorn `--reload` plus the Vite dev server on :5173). The dev containers use `ghcr.io/astral-sh/uv:0.12.17-python3.12-trixie-slim` (there is no bookworm variant for this uv version) and `node:22-slim`. Vite's proxy target comes from `API_PROXY_TARGET` (default `http://localhost:8000`).
 - uv is pinned to 0.12.17 in the Dockerfile and CI, matching `uv.lock`.
 
-### 6.3 Heroku (fallback only)
-`heroku.yml` uses the same Dockerfile (`build: docker: web: Dockerfile`). Heroku has no free tier, so use it only if Vercel blocks.
-
-### 6.4 Configuration
+### 6.3 Configuration
 | Env var | Default | Purpose |
 |---|---|---|
 | `WINDDESK_DATA_DIR` | `data/snapshot` | snapshot location |
@@ -264,6 +259,6 @@ No secrets are required. `.env.example` documents the variables above.
 | `app.frontend` unavailable in the installed FastAPI | StaticFiles + SPA catch-all fallback (§4) |
 | WINDFOR cadence/window differs from the sampled days | Data-contract tests in Phase 1; algorithms rely on `publish_time`/`target_time`, not on assumed cadence |
 | Timezone bugs | UTC internally; a single `timeutil` module; a BST test case |
-| Scope creep vs the 16 h budget | MoSCoW in the PRD; Should/Could only after Must passes; time boxes in PLAN |
+| Scope creep vs the 16 h budget | MoSCoW in the PRD; Should/Could only after Must passes |
 | Elexon unavailable during development | Raw cache + committed snapshot; runtime never calls Elexon |
 | Small-sample tails (P95/P99) | Shown with caveats; P99 not offered as a buffer |
