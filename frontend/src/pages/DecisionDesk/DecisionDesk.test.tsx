@@ -14,6 +14,7 @@ vi.mock('@/components/charts/DecisionCharts', () => ({
     <div role="img" aria-label={`decision chart ${hindsight ? 'hindsight' : 'trader'}`} />
   ),
   VintagesChart: () => <div role="img" aria-label="vintages chart" />,
+  WhatIfChart: () => <div role="img" aria-label="what-if chart" />,
 }))
 
 let fetchMock: ReturnType<typeof fetchRoutes>
@@ -146,6 +147,50 @@ describe('Decision Desk', () => {
     await screen.findByRole('region', { name: 'Decision context' })
     await userEvent.click(screen.getByRole('radio', { name: '95%' }))
     await waitFor(() => expect(lastDecisionQuery().get('confidence')).toBe('0.95'))
+  })
+})
+
+describe('Procurement what-if', () => {
+  // Fixture: forecast 10,000 / 10,000 / 9,000 MW and a gap; firm wind 8,000 / 8,000 / 7,500 MW.
+  const whatIf = () => screen.getByRole('region', { name: 'Procurement what-if' })
+
+  it('starts from 3,000 MW flat and a 10% share, totals over the covered hours', async () => {
+    renderAt('/?view=trader') // forecast-side only, so it is shown in the Trader view too
+    await screen.findByRole('region', { name: 'Decision context' })
+    expect(within(whatIf()).getByText('Illustrative')).toBeInTheDocument()
+    expect(readoutValue('Demand')).toBe('9,000 MWh') // 3 covered hours × 3,000
+    expect(readoutValue('To buy at the forecast')).toBe('6,100 MWh') // 2,000 + 2,000 + 2,100
+    expect(readoutValue('To buy at 90% firm wind')).toBe('6,650 MWh') // 2,200 + 2,200 + 2,250
+    expect(readoutValue('Extra for 90% confidence')).toBe('550 MWh')
+    expect(within(whatIf()).getByRole('img', { name: 'what-if chart' })).toBeInTheDocument()
+  })
+
+  it('takes pasted hourly demand and says what is wrong with it', async () => {
+    renderAt('/')
+    await screen.findByRole('region', { name: 'Decision context' })
+    await userEvent.click(screen.getByRole('radio', { name: 'Hourly' }))
+    const box = screen.getByRole('textbox', { name: /Hourly demand in MW/ })
+    expect(box).toHaveValue('3000, 3000, 3000, 3000') // seeded from the flat value
+
+    fireEvent.change(box, { target: { value: '1000, 1000, 1000' } })
+    expect(within(whatIf()).getByRole('alert')).toHaveTextContent(
+      'Expected 4 hourly values, got 3.',
+    )
+    expect(within(whatIf()).queryByRole('img', { name: 'what-if chart' })).toBeNull()
+
+    fireEvent.change(box, { target: { value: '1000\n1000\n1000\n5,000' } })
+    expect(readoutValue('To buy at the forecast')).toBe('100 MWh') // 0 + 0 + 100; gap hour ignored
+    expect(readoutValue('To buy at 90% firm wind')).toBe('650 MWh') // 200 + 200 + 250
+  })
+
+  it('rejects a share outside 0–100%', async () => {
+    renderAt('/')
+    await screen.findByRole('region', { name: 'Decision context' })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Your share of national wind/ }), {
+      target: { value: '150' },
+    })
+    expect(within(whatIf()).getByRole('alert')).toHaveTextContent('between 0% and 100%')
+    expect(within(whatIf()).queryByRole('img', { name: 'what-if chart' })).toBeNull()
   })
 })
 

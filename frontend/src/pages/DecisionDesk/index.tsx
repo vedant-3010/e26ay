@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils'
 import { decisionCsv, decisionCsvFilename } from './exportCsv'
 import { DecisionTimeline } from './Timeline'
 import { useDayKeys } from './useDayKeys'
+import { ProcurementWhatIf } from './WhatIf'
 
 const DEFAULT_CUSTOM_CUTOFF = '10:00'
 
@@ -314,6 +315,8 @@ function DeskBody({
         >
           <VintagesChart data={data} hindsight={hindsight} />
         </ChartPanel>
+
+        <ProcurementWhatIf data={data} confidencePct={pct} />
       </div>
     </>
   )

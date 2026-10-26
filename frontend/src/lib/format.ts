@@ -39,6 +39,11 @@ export function fmtGWh(mwh: Num): string {
   return isNum(mwh) ? `${nf0.format(mwh / 1000)} GWh` : MISSING
 }
 
+/** `72,000 MWh`: procurement volumes, which desks quote in MWh rather than GWh. */
+export function fmtMWh(mwh: Num): string {
+  return isNum(mwh) ? `${nf0.format(mwh)} MWh` : MISSING
+}
+
 /** `98.0%` (1 decimal, UI_SPEC §5). */
 export function fmtPct(value: Num): string {
   return isNum(value) ? `${nf1.format(value)}%` : MISSING

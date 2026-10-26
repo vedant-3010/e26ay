@@ -78,7 +78,13 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 │  runs after cutoff dashed, labelled "not available at decision time";        │
 │  actual (blue) shown in Hindsight                                            │
 └──────────────────────────────────────────────────────────────────────────────┘
+┌ Procurement what-if  [ILLUSTRATIVE] [CSV] (F7, Could; added in Phase 9) ─────┐
+│ Demand [Flat|Hourly] [3000] MW   Your share of national wind [10] %          │
+│ Demand MWh · To buy at the forecast · To buy at 90% firm wind · Extra (90%)  │
+│ stacked hourly bars (slate = at forecast, amber = extra at 90%), demand line │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
+- The what-if is forecast-side only, so it shows in both views. Its inputs are local state rather than URL state: a pasted 24-value series does not belong in a link, and the panel is illustrative. Hourly demand takes a spreadsheet column (thousands separators allowed) or a comma-separated line; invalid input shows the reason and hides the results instead of guessing.
 - The Trader view hides actual-dependent KPIs and series, and also the after-cutoff vintages. It is the "honest" view. Hindsight shows everything. **Default: Hindsight.** The pitch demo toggles between them.
 - Keyboard: ← / → change the delivery day.
 - A partial-coverage banner appears when `run.partial`.
@@ -137,6 +143,7 @@ Long-form, readable page with a max width of 760px and anchored sections: Data s
 | Distribution | bar (histogram) | error MW | count | markLines at P10/P50/P90; bars right of 0 tinted `--shortfall`. |
 | Buffer by level | grouped bar, plus a separate achieved-% strip | forecast bin | MW (bars) · % (strip, its own axis) | **No dual axis** (dataviz rule: two scales on one plot invent correlations). Bars show P80/P90/P95 shortfall in MW; achieved % sits in a small aligned chart or row below, with the target line at the chosen confidence. |
 | By hour | bar + line | hour UK | MW | Bars MAE, line bias. |
+| What-if (F7) | stacked bar + step line | hour UK | MW | To buy at the forecast (`--surplus` at 75%) with the extra at firm wind stacked on top (`--shortfall`), separated by a 2px surface gap; demand is a `step: 'middle'` line in `--foreground`. Gap hours stay empty. One axis. |
 | Daily | bar + line | date | MW | Clickable bars navigate to Decision Desk. |
 
 Common to all charts: animation ≤ 300 ms (off when `prefers-reduced-motion`), a tooltip with the time in UK format `Thu 15 Jan 18:00`, values in MW with a thousands separator, and a grid with 6–8 y-ticks.

@@ -20,6 +20,8 @@ export const GLOSSARY = {
   wape: 'Σ|error| ÷ Σ actual: total miss as a share of the wind that blew.',
   p90Abs: 'Nine in ten hours miss by less than this (in either direction).',
   p90Shortfall: 'Nine in ten hours fall short of the forecast by less than this.',
+  windShare:
+    'The part of national wind output your contracts give you, e.g. 10% if your PPAs track a tenth of GB wind. Illustrative: a real portfolio does not follow national wind exactly.',
   coverage:
     'Share of hours that have a forecast at least this far ahead. Runs only reach about 43 h ahead for late-evening hours.',
 } as const
