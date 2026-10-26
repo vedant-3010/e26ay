@@ -40,6 +40,14 @@ def test_if_none_match_returns_304(api: TestClient, variant: str) -> None:
     assert r.headers["x-snapshot-id"] == SYNTHETIC_SNAPSHOT_ID
 
 
+def test_large_responses_are_gzipped(api: TestClient) -> None:
+    r = api.get("/api/accuracy", headers={"Accept-Encoding": "gzip"})
+    assert r.headers["content-encoding"] == "gzip"
+    assert r.json()["params"]["population"] == "decision"  # the client decodes it
+    small = api.get("/api/health", headers={"Accept-Encoding": "gzip"})
+    assert "content-encoding" not in small.headers  # under the 1 KB threshold
+
+
 def test_stale_etag_gets_a_full_response(api: TestClient) -> None:
     r = api.get(URL, headers={"If-None-Match": etag_for("oldsnapshot1", "x")})
     assert r.status_code == 200

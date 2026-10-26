@@ -142,7 +142,7 @@ Layers (dependencies point downward only):
 
 > **Verified in Phase 0 (FastAPI 0.162.0):** `app.frontend(path, *, directory, fallback="auto"|"index.html"|"404.html"|None, check_dir="auto")` exists, so the StaticFiles fallback is not needed. The `index.html` fallback is applied **only to navigation requests**: GET/HEAD with `Accept: text/html` (or `application/xhtml+xml`) and an extension-less last path segment. A missing asset such as `/assets/x.js` returns 404, not HTML. Vercel's CDN fallback uses the same rule. Browsers always send `Accept: text/html` for navigations, so deep links work. When checking with `curl`, pass `-H 'Accept: text/html'`. `check_dir="auto"` raises if the directory is missing (unless `FASTAPI_ENV=development`), so `main.py` checks for `frontend/dist` itself, logs a warning and serves the API only. A catch-all `/api/{path}` route returns the JSON error envelope (404), so unknown API paths never fall through to the SPA.
 
-**No middleware unless needed.** Vercel keeps static files inside the function when top-level middleware exists. The Vite dev proxy removes the need for CORS. If middleware is added (e.g. a request-id logger), set `[tool.vercel.fastapi.static] cdn = true`.
+**Middleware: GZip only.** Uvicorn and `StaticFiles` don't compress, and without compression the Docker image sends about 1.2 MB on first load. Phase 8 measured a slow-4G LCP of about 7 s, so `GZipMiddleware(minimum_size=1024)` was added (JSON and SPA assets). Vercel keeps static files inside the function when top-level middleware exists, so `[tool.vercel.fastapi.static] cdn = true` forces CDN promotion; that was checked against Vercel's FastAPI docs on 2026-10-26. CDN-served files skip the middleware, which is fine because Vercel's CDN compresses them itself. The Vite dev proxy removes the need for CORS.
 
 **Logging:** stdlib `logging` with a one-line JSON formatter: timestamp, level, path, duration_ms, status. Log startup timing and snapshot id.
 
@@ -153,7 +153,7 @@ Layers (dependencies point downward only):
 - **Server state:** TanStack Query hooks in `api/queries.ts` (`useMeta`, `useMonitor`, `useDecision`, `useAccuracy`). Use `staleTime: Infinity`, because the data is a frozen snapshot, and `placeholderData: keepPreviousData` so charts don't flash while a slider moves.
 - **View state:** URL search params through a typed `useUrlState` helper (PRD F6). Debounce the horizon slider (150 ms) before the URL/query update.
 - **Charts:** one `EChart` wrapper handles init/dispose, resize (ResizeObserver), theme switch and `aria-label`. Each chart component maps API data to an option object and has no fetching logic. Option builders are pure functions in their own modules (`components/charts/*Option.ts`), so they are unit-tested without a canvas. Colours come from the CSS tokens at runtime (`charts/theme.ts`, re-read when the theme class changes). Modules are registered once in `charts/echarts.ts`.
-- **Code splitting:** pages are `React.lazy` (`pages/lazy.ts`), so ECharts loads only with the chart pages. The shell chunk is 129 KB gzipped.
+- **Code splitting:** pages are `React.lazy` (`pages/lazy.ts`), and `EChart` imports the ECharts runtime (`charts/echarts.ts`, 200 KB gzipped) on first mount. A page's text and KPIs therefore render without waiting for ECharts, which took slow-4G LCP from 3.2 s to 2.1 s in Phase 8. The shell chunk is 130 KB gzipped, and all JS together is about 390 KB gzipped (budget 450 KB).
 - **Formatting:** all UK-time and number formatting lives in `lib/format.ts` and `lib/time.ts` (`Intl.DateTimeFormat` with `timeZone: 'Europe/London'`). Never call `toLocaleString()` ad hoc.
 - **Dev server:** Vite proxies `/api` to `http://localhost:8000`.
 - **Toolchain as installed in Phase 0:** Vite 8, React 19.3, TypeScript 6.0 (pinned by `create-vite`; TS 7 is not yet supported by typescript-eslint), React Router 8 (`createBrowserRouter`), Tailwind 4.3 via `@tailwindcss/vite`, shadcn/ui 4.22 (`radix` base, `nova` preset, Lucide icons; it uses the `cn` package from shadcn instead of clsx + tailwind-merge), ESLint 10 flat config + Prettier 3, Vitest 5 + Testing Library. `openapi-typescript` 7.13 declares a `typescript@^5` peer, so `package.json` has an `overrides` entry that points it at the project's TS 6. Type generation was verified to work. Fonts are IBM Plex Sans/Mono from Google Fonts (`index.html`). Node 22 is used in Docker and CI; Node 20.19+ works locally.
@@ -170,7 +170,8 @@ Config as committed in Phase 0, checked against Vercel's FastAPI docs (updated 2
 [tool.vercel]
 entrypoint = "backend.winddesk.main:app"   # winddesk must use relative imports internally
 
-# [tool.vercel.fastapi.static] is left at its defaults (see below).
+[tool.vercel.fastapi.static]
+cdn = true   # added in Phase 8 with the GZip middleware (§4)
 ```
 
 ```json
@@ -189,7 +190,7 @@ entrypoint = "backend.winddesk.main:app"   # winddesk must use relative imports 
 
 Notes from Phase 0:
 - `tool.vercel.entrypoint = "backend.winddesk.main:app"` makes Vercel load `./backend/winddesk/main.py`. This was checked locally by importing `backend.winddesk.main` in a clean environment with no installed `winddesk` package: health and the SPA fallback work, and no absolute `winddesk` import leaks in.
-- **Deviation:** `[tool.vercel.fastapi.static] exclude = true` is **not** set. By default Vercel promotes `app.frontend` files to the CDN *and* keeps them in the function bundle (about 0.5 MB), so a request that reaches the function (for example a non-navigation miss) is answered by the same `app.frontend` logic as in Docker. The size cost is negligible.
+- **Deviation:** `[tool.vercel.fastapi.static] exclude = true` is **not** set. By default Vercel promotes `app.frontend` files to the CDN *and* keeps them in the function bundle (about 1 MB), so a request that reaches the function (for example a non-navigation miss) is answered by the same `app.frontend` logic as in Docker. The size cost is negligible. `cdn = true` was added in Phase 8 because the app now has GZip middleware (§4).
 - A `vercel.json` `buildCommand` takes precedence over `[tool.vercel.scripts] build`, so only `vercel.json` defines it.
 - Runtime dependencies (pandas, numpy, pyarrow) come to about 350 MB unpacked in the Docker venv, with pyarrow at about 150 MB. That is under the 500 MB function limit; confirm with the Vercel build log.
 

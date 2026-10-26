@@ -10,6 +10,11 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  build: {
+    // The ECharts chunk (~600 KB raw, 200 KB gzipped) is already modular and loads on first chart
+    // mount (EChart.tsx); the JS budget is gzipped size (ARCHITECTURE §7), checked in PROGRESS.
+    chunkSizeWarningLimit: 650,
+  },
   server: {
     port: 5173,
     // Same-origin in dev too: the FastAPI app serves /api (ADR-0002), so no CORS is needed.

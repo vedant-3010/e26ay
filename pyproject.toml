@@ -41,10 +41,11 @@ packages = ["backend/winddesk"]
 # inside the package is relative.
 entrypoint = "backend.winddesk.main:app"
 
-# [tool.vercel.fastapi.static]: defaults kept on purpose. `app.frontend("/", "frontend/dist")`
-# is promoted to the CDN, and the SPA (~0.5 MB) also stays in the function bundle so the
-# function can serve the same files if a request reaches it. No middleware is used, so
-# `cdn = true` is not needed.
+# `app.frontend("/", "frontend/dist")` is promoted to the CDN, and the SPA (~1 MB) also stays
+# in the function bundle so the function can serve the same files if a request reaches it.
+[tool.vercel.fastapi.static]
+# The app has top-level GZip middleware, which would otherwise keep the SPA inside the function.
+cdn = true
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]

@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from starlette.middleware.gzip import GZipMiddleware
 
 from . import __version__
 from .api import routes_accuracy, routes_decision, routes_meta, routes_monitor
@@ -61,6 +62,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     install_error_handlers(app)
+    # Compress JSON and the SPA's assets (the JS bundle is ~3x smaller gzipped). Uvicorn and
+    # StaticFiles do not compress; Vercel's CDN does, but Docker/Heroku deploys need this.
+    # Because it is top-level middleware, pyproject sets [tool.vercel.fastapi.static] cdn = true
+    # so Vercel still serves the SPA from its CDN (ARCHITECTURE §4).
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.include_router(routes_meta.router, prefix="/api", tags=["meta"])
     app.include_router(routes_monitor.router, prefix="/api", tags=["monitor"])
     app.include_router(routes_decision.router, prefix="/api", tags=["decision"])
