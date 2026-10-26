@@ -44,6 +44,17 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
 
+### 2026-10-26 — Dark mode without blue tones
+- **Human feedback:** "dark mode is not good, I don't want blue tones". The dark theme used Tailwind **slate** (page `#020617`, cards `#0f172a`), which reads navy.
+- **Change:** every dark neutral now uses Tailwind **neutral** (pure grey), step for step. Page `#0a0a0a`, cards and popovers `#171717`, fills and borders `#262626`, inputs `#404040`, muted text `#a3a3a3`. The surplus, cutoff and vintage greys changed the same way, and so did the chart tooltip shadow (`theme.ts`). Light mode is unchanged.
+- **Kept:** `--actual` stays blue in both themes (UI_SPEC §1: a series keeps its colour across modes), and the green, amber and red data hues are unchanged.
+- **Checks:**
+  - Contrast moved by at most ±0.3 from the slate steps; muted text is 7.1:1 on cards.
+  - The dataviz validator passes actual, forecast and shortfall on `#171717`. Its one warning (amber↔green, protan ΔE 6.2) predates this change, because hue separation doesn't depend on the surface, and those charts already use labels and gaps.
+  - Screenshots of every page in dark mode at 1280 px and 375 px: no blue cast, no console errors, no overflow.
+  - `make check` ✅ (307 pytest, 103 Vitest, build); local Playwright 10/10.
+  - The README's `monitor-dark.png` was retaken at the same size.
+
 ### 2026-10-26 — Deployed on Vercel: closes 0.9, 8.2 and 8.5 ✅
 - **Live at https://e26ay-wtpn.vercel.app.** The human imported the repo, which created **two** projects. `e26ay-wtpn` (root `./`, preset FastAPI) deployed on the first try with the committed config, unchanged from Phase 0. `e26ay` fails every build with `FASTAPI_ENTRYPOINT_NOT_FOUND`.
   - **Diagnosis**, from Vercel's own resolver (`packages/python/src/entrypoint.ts`): that generic message appears only when the build directory has no `pyproject.toml` with `tool.vercel.entrypoint`.

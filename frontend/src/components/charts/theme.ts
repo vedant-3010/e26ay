@@ -103,7 +103,7 @@ export function baseOption(c: ChartColors): EChartsOption {
       borderWidth: 1,
       padding: [8, 10],
       textStyle: { color: c.text, fontSize: 12, fontFamily: FONT_FAMILY },
-      extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);',
+      extraCssText: 'border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);',
       confine: true,
     },
   }

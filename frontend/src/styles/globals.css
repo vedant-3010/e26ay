@@ -93,36 +93,38 @@
 }
 
 .dark {
-  /* Validated with the dataviz palette checker on slate-900/950 (dark band L 0.48–0.67,
-     deutan ΔE ≥ 27): the UI_SPEC 400-level pastels were too light for chart marks. */
+  /* Neutral greys (Tailwind neutral), not slate: the dark theme must carry no blue cast.
+     Each step replaces the slate step it took over, so contrast is unchanged (±0.3).
+     Data hues validated with the dataviz palette checker on neutral-900 (dark band
+     L 0.48–0.67; contrast ≥ 3:1): the UI_SPEC 400-level pastels were too light for chart marks. */
   --actual: #3b82f6;
   --forecast: #16a34a;
   --shortfall: #d97706;
   --shortfall-severe: #dc2626;
-  --surplus: #64748b;
-  --cutoff: #cbd5e1;
-  --vintage-early: #334155; /* slate-700 */
-  --vintage-late: #94a3b8; /* slate-400 */
+  --surplus: #737373; /* neutral-500 */
+  --cutoff: #d4d4d4; /* neutral-300 */
+  --vintage-early: #404040; /* neutral-700 */
+  --vintage-late: #a3a3a3; /* neutral-400 */
 
-  --background: #020617; /* slate-950 */
-  --foreground: #f1f5f9;
-  --card: #0f172a; /* slate-900 */
-  --card-foreground: #f1f5f9;
-  --popover: #0f172a;
-  --popover-foreground: #f1f5f9;
-  --primary: #f1f5f9;
-  --primary-foreground: #0f172a;
-  --secondary: #1e293b; /* slate-800 */
-  --secondary-foreground: #f1f5f9;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8; /* slate-400: 6.9:1 on slate-900, AA */
-  --accent: #1e293b;
-  --accent-foreground: #f1f5f9;
+  --background: #0a0a0a; /* neutral-950 */
+  --foreground: #f5f5f5; /* neutral-100 */
+  --card: #171717; /* neutral-900 */
+  --card-foreground: #f5f5f5;
+  --popover: #171717;
+  --popover-foreground: #f5f5f5;
+  --primary: #f5f5f5;
+  --primary-foreground: #171717;
+  --secondary: #262626; /* neutral-800 */
+  --secondary-foreground: #f5f5f5;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3; /* neutral-400: 7.1:1 on neutral-900, AA */
+  --accent: #262626;
+  --accent-foreground: #f5f5f5;
   --destructive: #f87171;
-  --border: #1e293b;
-  --input: #334155;
-  --ring: #64748b;
-  --chart-grid: #1e293b;
+  --border: #262626;
+  --input: #404040;
+  --ring: #737373;
+  --chart-grid: #262626;
   color-scheme: dark;
 }
 

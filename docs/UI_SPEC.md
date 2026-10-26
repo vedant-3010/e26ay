@@ -14,11 +14,13 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 | `--firm` | `#16A34A` @ 18% | `#16A34A` @ 18% | Firm-wind band |
 | `--shortfall` | `#D97706` | `#D97706` | Over-forecast / shortfall |
 | `--shortfall-severe` | `#DC2626` | `#DC2626` | Errors beyond P90 |
-| `--surplus` | `#64748B` | `#64748B` | Under-forecast / surplus |
-| `--cutoff` | `#334155` dashed | `#CBD5E1` dashed | Decision cutoff marker |
-| neutrals | slate scale | slate scale | Surfaces, text, grid |
+| `--surplus` | `#64748B` | `#737373` | Under-forecast / surplus |
+| `--cutoff` | `#334155` dashed | `#D4D4D4` dashed | Decision cutoff marker |
+| neutrals | slate scale | neutral scale (no blue cast) | Surfaces, text, grid |
 
 > **Phase 5 change (validated):** the dark values above replace the original 400-level pastels (`#60A5FA`, `#4ADE80`, `#FBBF24`, `#94A3B8`, …). Run through the dataviz palette validator against the real dark surfaces (slate-900/950), those were too light for chart marks (dark lightness band L 0.48–0.67). The chosen set passes the lightness band, chroma floor, CVD separation (actual↔forecast deutan ΔE 27.5; actual↔shortfall protan ΔE 30.2) and ≥ 3:1 contrast. Light mode passes unchanged (actual↔forecast deutan ΔE 30.3). Surplus slate is deliberately low-chroma: shortfall is the emphasised pole, surplus the greyed one, and the bar's side of zero also encodes the sign.
+
+> **Change after release (human feedback, 2026-10-26):** "I don't want blue tones" in dark mode. Dark neutrals moved from Tailwind slate to Tailwind **neutral** (pure grey): page `#0A0A0A`, cards `#171717`, fills and borders `#262626`, muted text `#A3A3A3`. Each step replaces the slate step it took over, so contrast stays within ±0.3 (muted text 7.1:1 on cards). The data hues were re-validated on `#171717` and pass. `--actual` stays blue in both themes, because a series colour keeps its meaning across modes.
 
 - Surfaces are flat, with 1px borders and 8px radius. There are no gradients and no drop shadows except on popovers.
 - **Density:** 14px base text; KPI values 28px mono; 24px section spacing; max content width 1280px.
