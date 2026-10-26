@@ -17,30 +17,31 @@ NO_BIAS_MW = 100.0  #: |bias| below this reads as "no material bias"
 IN_LINE_PCT = 1.0  #: |energy error| below this reads as "in line with the forecast"
 
 
-def _half_up(value: float, places: int) -> float:
+def display_round(value: float, places: int) -> float:
     """Round like the UI does: first to the API's 1 decimal, then half away from zero.
 
-    Python's own rounding is half-to-even, which made text read "2,022 MW" beside a figure
-    showing "2,023 MW" for the same value.
+    Python's own rounding is half-to-even, and rounding the raw value once can differ from the
+    UI's two steps (2,022.47 → API 2,022.5 → "2,023 MW"). Every number written for people
+    (narratives, INSIGHTS.md) goes through this so it matches what the app shows.
     """
     one_dp = Decimal(str(round(value, 1)))
     return float(one_dp.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP))
 
 
 def fmt_mw(mw: float) -> str:
-    return f"{_half_up(mw, 0):,.0f} MW"
+    return f"{display_round(mw, 0):,.0f} MW"
 
 
 def fmt_gw(mw: float) -> str:
-    return f"{_half_up(mw / 1000, 1):,.1f} GW"
+    return f"{display_round(mw / 1000, 1):,.1f} GW"
 
 
 def fmt_gwh(mwh: float) -> str:
-    return f"{_half_up(mwh / 1000, 0):,.0f} GWh"
+    return f"{display_round(mwh / 1000, 0):,.0f} GWh"
 
 
 def fmt_pct(pct: float) -> str:
-    return f"{_half_up(pct, 0):.0f}%"
+    return f"{display_round(pct, 0):.0f}%"
 
 
 def _uk_time(ts: pd.Timestamp) -> str:

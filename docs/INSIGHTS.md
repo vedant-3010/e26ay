@@ -5,7 +5,7 @@
 
 | Metric (decision forecasts) | EPEX 09:20 | N2EX 09:50 |
 |---|---|---|
-| MAE (MW) / WAPE (%) | 2,022 / 17.9 | 1,996 / 17.7 |
+| MAE (MW) / WAPE (%) | 2,023 / 17.9 | 1,996 / 17.7 |
 | Bias (MW, + = over-forecast) | +1,746 | +1,728 |
 | P90 buffer (MW), pool-wide P90 shortfall | 4,154 | 4,184 |
 | P90 buffer (MW), average conditional LODO buffer applied | 3,509 | 3,551 |
@@ -15,7 +15,7 @@ Lead curve MAE (MW): 1.5 h 1,667 · 12.5 h 1,740 · 24.5 h 1,949 · 36.5 h 2,078
 
 Value of the forecast @90% (EPEX): no-forecast firm 5,380 MW → forecast firm 9,523 MW (+4,143 MW)
 
-Auction timing: moving from the EPEX 09:20 to the N2EX 09:50 cutoff (the 09:30 run) changes MAE by -1.3% (2,022 MW → 1,996 MW).
+Auction timing: moving from the EPEX 09:20 to the N2EX 09:50 cutoff (the 09:30 run) changes MAE by -1.3% (2,023 MW → 1,996 MW).
 
 Buffer method at 90% (EPEX): conditional LODO holds back 3,509 MW on average for 87.0% coverage; one flat LODO buffer holds back 4,142 MW for 88.6%.
 
@@ -28,11 +28,11 @@ Calibration (conditional LODO), target → achieved: EPEX 80% → 77.7%; EPEX 90
 2) **Typical day: Sat 17 Jan**. MAE 1,659 MW; forecast 177 GWh vs actual 136 GWh (+23% shortfall); firm wind held 21/24 h; largest shortfall 2,587 MW. Deep link: `/?date=2026-01-17&auction=epex&conf=0.9&view=hindsight`  
    > At 09:20 on Fri 16 Jan, the latest forecast expected 177 GWh of wind for Sat 17 Jan. At 90% confidence you could count on an average of 4.6 GW. Wind delivered 136 GWh, 23% below forecast, with the largest shortfall of 2.6 GW at 10:00. Firm wind held in 21 of 24 hours.
 
-3) **Buffer did its job: Tue 27 Jan**. MAE 3,419 MW; forecast 477 GWh vs actual 394 GWh (+17% shortfall); firm wind held 23/24 h; largest shortfall 5,914 MW. Deep link: `/?date=2026-01-27&auction=epex&conf=0.9&view=hindsight`  
-   > At 09:20 on Mon 26 Jan, the latest forecast expected 477 GWh of wind for Tue 27 Jan. At 90% confidence you could count on an average of 14.5 GW. Wind delivered 394 GWh, 17% below forecast, with the largest shortfall of 5.9 GW at 23:00. Firm wind held in 23 of 24 hours.
+3) **Buffer did its job: Tue 27 Jan**. MAE 3,419 MW; forecast 477 GWh vs actual 394 GWh (+18% shortfall); firm wind held 23/24 h; largest shortfall 5,914 MW. Deep link: `/?date=2026-01-27&auction=epex&conf=0.9&view=hindsight`  
+   > At 09:20 on Mon 26 Jan, the latest forecast expected 477 GWh of wind for Tue 27 Jan. At 90% confidence you could count on an average of 14.5 GW. Wind delivered 394 GWh, 18% below forecast, with the largest shortfall of 5.9 GW at 23:00. Firm wind held in 23 of 24 hours.
 
 ## Three pitch sentences
-1. At your 09:20 cutoff, tomorrow's wind forecast is typically off by 2,022 MW, and it runs high: 1,746 MW too high on average, with wind below forecast in 85% of hours.
+1. At your 09:20 cutoff, tomorrow's wind forecast is typically off by 2,023 MW, and it runs high: 1,746 MW too high on average, with wind below forecast in 85% of hours.
 2. Planning on P90 firm wind instead of the point forecast held in 87% of hours in a back-test that never looks ahead (target 90%).
 3. With the forecast you can bank 4,143 MW more wind on an average hour than without it (9,523 MW vs 5,380 MW), while bidding at 09:50 instead of 09:20 improves accuracy by only 1.3%.
 
