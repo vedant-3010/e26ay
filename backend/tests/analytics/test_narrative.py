@@ -34,6 +34,14 @@ def test_formatters() -> None:
     assert fmt_gwh(412_000) == "412 GWh"
 
 
+def test_formatting_rounds_like_the_ui() -> None:
+    # The API rounds to 1 decimal and the browser rounds half up: 2022.47 → 2022.5 → 2,023.
+    assert fmt_mw(2022.47) == "2,023 MW"
+    assert fmt_mw(2022.5) == "2,023 MW"  # not banker's rounding (2,022)
+    assert fmt_mw(-250.5) == "-251 MW"
+    assert fmt_gw(14_465.0) == "14.5 GW"
+
+
 class TestDecisionSummary:
     def test_full_day_in_line_with_forecast(
         self, forecasts: pd.DataFrame, actuals: pd.DataFrame

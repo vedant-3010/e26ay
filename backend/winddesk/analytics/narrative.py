@@ -5,6 +5,7 @@ branch has a unit test.
 """
 
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 
 import pandas as pd
 
@@ -16,20 +17,30 @@ NO_BIAS_MW = 100.0  #: |bias| below this reads as "no material bias"
 IN_LINE_PCT = 1.0  #: |energy error| below this reads as "in line with the forecast"
 
 
+def _half_up(value: float, places: int) -> float:
+    """Round like the UI does: first to the API's 1 decimal, then half away from zero.
+
+    Python's own rounding is half-to-even, which made text read "2,022 MW" beside a figure
+    showing "2,023 MW" for the same value.
+    """
+    one_dp = Decimal(str(round(value, 1)))
+    return float(one_dp.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP))
+
+
 def fmt_mw(mw: float) -> str:
-    return f"{mw:,.0f} MW"
+    return f"{_half_up(mw, 0):,.0f} MW"
 
 
 def fmt_gw(mw: float) -> str:
-    return f"{mw / 1000:,.1f} GW"
+    return f"{_half_up(mw / 1000, 1):,.1f} GW"
 
 
 def fmt_gwh(mwh: float) -> str:
-    return f"{mwh / 1000:,.0f} GWh"
+    return f"{_half_up(mwh / 1000, 0):,.0f} GWh"
 
 
 def fmt_pct(pct: float) -> str:
-    return f"{pct:.0f}%"
+    return f"{_half_up(pct, 0):.0f}%"
 
 
 def _uk_time(ts: pd.Timestamp) -> str:
