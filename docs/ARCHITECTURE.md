@@ -230,6 +230,7 @@ No secrets are required. `.env.example` documents the variables above.
 | Tests | `pytest -m "not snapshot"` (fast), `pytest -m snapshot` (contract), `vitest run` |
 | API types fresh | `make gen-api && git diff --exit-code frontend/src/api/schema.d.ts` |
 | Build | `npm run build`, `docker build .` |
+| End-to-end (Phase 9) | `make test-e2e`: Playwright on FastAPI serving the build, desktop + 375 px (page loads, one control per page, charts painted, no console errors, no horizontal overflow). It runs in its own CI job and is not part of `make check`, so the gate stays fast and needs no browser. |
 | **All** | `make check` |
 
 - **CI:** GitHub Actions on push/PR runs backend, frontend and docker-build jobs.

@@ -13,10 +13,10 @@ NOTEBOOK := notebooks/01_wind_forecast_accuracy.ipynb
 IMAGE    ?= winddesk
 
 .PHONY: help setup dev dev-api dev-web ingest test test-contract lint format typecheck \
-        gen-api gen-api-check build notebook docker-build docker-up check clean
+        test-e2e gen-api gen-api-check build notebook docker-build docker-up check clean
 
 help: ## List targets
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Install Python (uv) and frontend (npm ci) dependencies, and git hooks
 	$(UV) sync --frozen
@@ -41,6 +41,9 @@ test: ## Fast tests: pytest (no snapshot marker, ≥ 90% analytics coverage) + V
 
 test-contract: ## Real-data contract tests against the committed snapshot
 	$(UV) run pytest -m snapshot
+
+test-e2e: build ## Playwright smoke tests (desktop + 375 px) on FastAPI serving the build
+	$(NPM) --prefix $(FE) run test:e2e
 
 lint: ## ruff, ruff format --check, ESLint, Prettier --check
 	$(UV) run ruff check .

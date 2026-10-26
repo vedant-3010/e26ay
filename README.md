@@ -43,6 +43,7 @@ docker compose up --build        # → http://localhost:8000
 make setup     # uv sync + npm ci + git hooks
 make dev       # FastAPI on :8000 and Vite on :5173 → open http://localhost:5173
 make check     # the gate: lint + types + tests + build
+make test-e2e  # Playwright smoke tests (first time: npx --prefix frontend playwright install chromium)
 ```
 
 The repo ships a validated data snapshot (`data/snapshot/`), so the app runs offline. To rebuild it from Elexon:
@@ -66,6 +67,7 @@ No secrets are needed. `.env.example` lists the optional settings. Run `make hel
 | `backend/winddesk/api/` | Thin routers, Pydantic schemas, parameter validation, ETag/Cache-Control, the error envelope, OpenAPI export |
 | `backend/winddesk/main.py` · `store.py` · `config.py` | App factory, the in-memory data store built at startup, settings |
 | `backend/tests/` | pytest: `analytics/` (hand-computed expected values), `api/`, `ingest/`, and `contract/` (real-snapshot tests, marker `snapshot`) |
+| `frontend/e2e/` · `frontend/playwright.config.ts` | Playwright smoke tests (desktop and 375 px) on the production app |
 | `frontend/src/pages/` | Decision Desk, Monitor, Accuracy Lab, Methodology, plus the not-found and error pages (lazy-loaded) |
 | `frontend/src/components/` | `charts/` (one ECharts wrapper plus pure option builders), `controls/`, `kpi/`, `layout/`, `feedback/`, `ui/` (shadcn) |
 | `frontend/src/api/` | Typed client: `schema.d.ts` is **generated** from OpenAPI (`make gen-api`); `queries.ts` holds the TanStack Query hooks |
@@ -151,8 +153,9 @@ The full specification is [`docs/DATA_AND_ANALYTICS.md`](docs/DATA_AND_ANALYTICS
 | Layer | What runs |
 |---|---|
 | Backend | `ruff` (lint and format), `mypy --strict` on analytics, services and api, and **438 pytest tests**: 295 fast tests, gated at ≥ 90% line coverage on `winddesk.analytics` (currently 99%), plus 143 contract tests on the real snapshot |
-| Frontend | ESLint, Prettier, `tsc` (strict, no `any`), **86 Vitest tests** (formatting, URL state, chart option builders, every page's states), and a production build |
+| Frontend | ESLint, Prettier, `tsc` (strict, no `any`), **100 Vitest tests** (formatting, URL state, chart option builders, every page's states), and a production build |
 | API contract | `make gen-api-check`: CI fails if the committed TypeScript types drift from the OpenAPI schema |
+| End-to-end | `make test-e2e`: **Playwright** against FastAPI serving the production build, at desktop width and 375 px. Every page loads, one control changes the view, the charts actually paint, there are no console errors and no horizontal overflow. It runs as its own CI job |
 | Docker | The image is built, run and smoke-tested (`/api/health` and the SPA) in CI |
 
 Measured on the production Docker image (Phase 8; see [`docs/PROGRESS.md`](docs/PROGRESS.md)):
