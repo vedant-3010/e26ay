@@ -170,7 +170,7 @@ Three pitch sentences: …
   - limitations and next steps
 - [x] 8.4 Fill the numbers in `docs/DEMO_SCRIPT.md` from `INSIGHTS.md`.
 - [ ] 8.5 Final deploy. 👤 Human verifies in incognito: the app URL, the repo URL (public), and the README renders.
-- [ ] 8.6 Tag `v1.0.0`, and make sure CI is green on the tag.
+- [x] 8.6 Tag `v1.0.0`, and make sure CI is green on the tag.
 
 **DoD:** the release checklist in PRD §9 is complete, apart from the human-only video and form steps.
 

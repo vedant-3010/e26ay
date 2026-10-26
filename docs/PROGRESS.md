@@ -77,7 +77,7 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 - **8.4 Demo script:** every number filled from INSIGHTS and checked against the API. Part 1 opens on Tue 27 Jan, then Wed 28 Jan (the decision from Phase 6).
   - Verifying the forecast-evolution beat changed the script. On 28 Jan the 09:30 run (N2EX) was **identical** to the 07:30 run (11.1 GW average). The first run to see the drop was 11:30, after both auctions, and it was still high (8.8 GW against 5.8 GW actual). The script now says this, instead of "an N2EX bidder would have seen it coming".
   - The cutoff recommendation was changed to match the data: keep 09:20, because the later run buys only 1.3%.
-- **8.6:** tagged `v1.0.0` after CI went green on `main`; CI on the tag is recorded below.
+- **8.6:** CI went green on `main` (`0ad1d4d`: backend, frontend and Docker jobs), then `v1.0.0` was tagged on that commit. CI on the tag is ✅ (all 3 jobs): https://github.com/vedant-3010/e26ay/actions/runs/40337991414
 - **Checks:**
   - `make check` ✅: 295 pytest with 99% analytics coverage, 86 Vitest, and the build (the chunk-size warning limit was raised to 650 KB with a comment, because the ECharts chunk is intentional and modular).
   - `make test-contract` ✅ 143. `make notebook` ✅.
