@@ -267,7 +267,7 @@ function DeskBody({
         </p>
       </section>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 [&>*]:min-w-0">
         <ChartPanel
           title={`Wind for ${day}`}
           description={

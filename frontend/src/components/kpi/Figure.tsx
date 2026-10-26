@@ -11,7 +11,12 @@ const SIZES = {
 export function Figure({ text, size = 'lg' }: { text: string; size?: keyof typeof SIZES }) {
   const [value, unit] = splitUnit(text)
   return (
-    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+    <span
+      className={cn(
+        'inline-flex items-baseline whitespace-nowrap',
+        unit === '%' ? 'gap-px' : 'gap-1',
+      )}
+    >
       <span
         className={cn(
           'font-mono font-medium tracking-tight [font-variant-numeric:proportional-nums]',

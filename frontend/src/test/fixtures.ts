@@ -1,7 +1,7 @@
 /** Typed API payloads for tests. The generated types keep them honest against the contract. */
 import { screen } from '@testing-library/react'
 
-import type { DecisionData, Health, Meta, Metrics, MonitorData } from '@/api/client'
+import type { AccuracyData, DecisionData, Health, Meta, Metrics, MonitorData } from '@/api/client'
 
 export const HEALTH: Health = {
   status: 'ok',
@@ -200,4 +200,107 @@ export function readoutValue(label: string): string {
   if (!term) throw new Error(`No readout labelled ${label}`)
   const value = term.parentElement?.querySelector('dd')
   return (value?.textContent ?? '').replace(/\s+/g, ' ').trim()
+}
+
+/** A small Accuracy Lab payload (decision population, EPEX, full window). */
+export function accuracyData(overrides: Partial<AccuracyData> = {}): AccuracyData {
+  return {
+    params: {
+      population: 'decision',
+      auction: 'epex',
+      horizon_h: 24,
+      start: '2026-01-02',
+      end: '2026-02-01',
+      confidence: 0.9,
+    },
+    headline: { ...METRICS, n: 744, mae_mw: 2022.4, bias_mw: 1746.2, wape_pct: 17.9 },
+    takeaways: [
+      'At the EPEX SPOT GB Day-Ahead decision point (16.5–39.5 h ahead), the forecast is typically off by 2,022 MW.',
+      'The forecast tends to run high, by 1,746 MW on average, so shortfalls are more common than surpluses.',
+      'Holding back 4,154 MW covers 90% of shortfalls.',
+    ],
+    lead_curve: [
+      {
+        lead_h: 0.5,
+        n: 248,
+        mae_mw: 1669,
+        rmse_mw: 2000,
+        bias_mw: 1455,
+        p50_abs_mw: 1500,
+        p90_abs_mw: 3430,
+        p99_abs_mw: 6000,
+      },
+      {
+        lead_h: 16.5,
+        n: 248,
+        mae_mw: 1859,
+        rmse_mw: 2200,
+        bias_mw: 1650,
+        p50_abs_mw: 1600,
+        p90_abs_mw: 3636,
+        p99_abs_mw: 6200,
+      },
+    ],
+    decision_lead_window_h: [16.5, 39.5],
+    distribution: {
+      bin_edges_mw: [-500, -250, 0, 250],
+      counts: [2, 5, 9],
+      p10_mw: -426,
+      p50_mw: 1582,
+      p90_mw: 4154,
+    },
+    by_hour: [{ hour_uk: 0, n: 31, mae_mw: 1950, bias_mw: 1900, p90_shortfall_mw: 4000 }],
+    by_level: [
+      {
+        forecast_from_mw: 0,
+        forecast_to_mw: 8200,
+        n: 148,
+        mae_mw: 1258,
+        bias_mw: 371,
+        p80_shortfall_mw: 1657,
+        p90_shortfall_mw: 1970,
+        p95_shortfall_mw: 2489,
+        achieved_pct: 88.5,
+      },
+      {
+        forecast_from_mw: 18100,
+        forecast_to_mw: null,
+        n: 148,
+        mae_mw: 3458,
+        bias_mw: 3458,
+        p80_shortfall_mw: 4340,
+        p90_shortfall_mw: 5376,
+        p95_shortfall_mw: 5895,
+        achieved_pct: 85.1,
+      },
+    ],
+    calibration: { target_pct: 90, achieved_pct: 87, method: 'conditional_lodo' },
+    daily: [
+      { delivery_date: '2026-01-27', mae_mw: 3419, bias_mw: 3300, max_shortfall_mw: 5914 },
+      { delivery_date: '2026-01-28', mae_mw: 5329, bias_mw: 5329, max_shortfall_mw: 6210 },
+    ],
+    worst: [
+      {
+        t: '2026-01-12T01:00:00Z',
+        delivery_date: '2026-01-12',
+        forecast_mw: 20942,
+        actual_mw: 14048,
+        error_mw: 6894,
+        publish_time: '2026-01-11T07:30:00Z',
+        lead_h: 17.5,
+      },
+    ],
+    auction_comparison: {
+      epex: { ...METRICS, mae_mw: 2022.4, p90_shortfall_mw: 4154 },
+      n2ex: { ...METRICS, mae_mw: 1996.1, p90_shortfall_mw: 4184 },
+      mae_change_pct: -1.3,
+    },
+    forecast_value: {
+      confidence: 0.9,
+      unconditional_firm_mw: 5379.6,
+      avg_forecast_firm_mw: 9522.9,
+      gain_mw: 4143.3,
+    },
+    ...overrides,
+  }
 }

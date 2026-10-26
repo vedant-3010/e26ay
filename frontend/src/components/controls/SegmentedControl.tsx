@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
       value={value}
       onValueChange={(v) => onChange(v as T)}
       orientation="horizontal"
-      className="inline-flex rounded-lg border bg-muted p-0.5"
+      className="inline-flex max-w-full flex-wrap rounded-lg border bg-muted p-0.5"
     >
       {options.map((o) => (
         <RadioGroup.Item
