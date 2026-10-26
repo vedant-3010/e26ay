@@ -11,9 +11,10 @@ PY_APP   := winddesk.main:app
 OPENAPI  := .cache/openapi.json
 NOTEBOOK := notebooks/01_wind_forecast_accuracy.ipynb
 IMAGE    ?= winddesk
+PROD_URL ?= https://e26ay-wtpn.vercel.app
 
 .PHONY: help setup dev dev-api dev-web ingest test test-contract lint format typecheck \
-        test-e2e gen-api gen-api-check build notebook docker-build docker-up check clean
+        test-e2e test-e2e-prod gen-api gen-api-check build notebook docker-build docker-up check clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -44,6 +45,9 @@ test-contract: ## Real-data contract tests against the committed snapshot
 
 test-e2e: build ## Playwright smoke tests (desktop + 375 px) on FastAPI serving the build
 	$(NPM) --prefix $(FE) run test:e2e
+
+test-e2e-prod: ## The same smoke tests against the deployed app (PROD_URL)
+	E2E_BASE_URL=$(PROD_URL) $(NPM) --prefix $(FE) run test:e2e
 
 lint: ## ruff, ruff format --check, ESLint, Prettier --check
 	$(UV) run ruff check .
