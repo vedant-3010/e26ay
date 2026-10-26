@@ -178,6 +178,8 @@ cdn = true   # added in Phase 8 with the GZip middleware (§4)
 // vercel.json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "regions": ["lhr1"],
   "buildCommand": "npm --prefix frontend ci && npm --prefix frontend run build",
   "functions": {
     "backend/winddesk/main.py": {
@@ -192,6 +194,8 @@ Notes from Phase 0:
 - `tool.vercel.entrypoint = "backend.winddesk.main:app"` makes Vercel load `./backend/winddesk/main.py`. This was checked locally by importing `backend.winddesk.main` in a clean environment with no installed `winddesk` package: health and the SPA fallback work, and no absolute `winddesk` import leaks in.
 - **Deviation:** `[tool.vercel.fastapi.static] exclude = true` is **not** set. By default Vercel promotes `app.frontend` files to the CDN *and* keeps them in the function bundle (about 1 MB), so a request that reaches the function (for example a non-navigation miss) is answered by the same `app.frontend` logic as in Docker. The size cost is negligible. `cdn = true` was added in Phase 8 because the app now has GZip middleware (§4).
 - A `vercel.json` `buildCommand` takes precedence over `[tool.vercel.scripts] build`, so only `vercel.json` defines it.
+- `regions: ["lhr1"]` (London, added after the first deploy): the users are a UK trading desk and live mode calls Elexon, so the function runs next to both. Vercel's default is `iad1` (Washington); Hobby allows any single region.
+- **Root Directory must be the repo root** (the default). From any subfolder Vercel finds no `pyproject.toml`, so `tool.vercel.entrypoint` is never read and the build fails with `FASTAPI_ENTRYPOINT_NOT_FOUND`. A second, duplicate import of the repo did exactly that on 2026-10-26, while the project with the default root deployed. A `frontend/`-only (Vite) project would build but has no API. Use one project: root `./`, preset FastAPI (`vercel.json` sets it too).
 - Runtime dependencies (pandas, numpy, pyarrow) come to about 350 MB unpacked in the Docker venv, with pyarrow at about 150 MB. That is under the 500 MB function limit; confirm with the Vercel build log.
 
 **Fallback** if the entrypoint or import path misbehaves: add a root `index.py` shim that inserts `backend/` into `sys.path` and does `from winddesk.main import app`.
