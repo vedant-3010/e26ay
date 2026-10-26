@@ -254,7 +254,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
     (date: string) => {
       const q = new URLSearchParams({ date })
       if (deskAuction !== meta.defaults.auction) q.set('auction', deskAuction)
-      return `/?${q.toString()}`
+      return `/desk?${q.toString()}`
     },
     [deskAuction, meta.defaults.auction],
   )

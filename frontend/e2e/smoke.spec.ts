@@ -46,8 +46,24 @@ test.afterEach(async ({ page }) => {
   expect(scrollWidth, 'no horizontal overflow').toBeLessThanOrEqual(innerWidth)
 })
 
+test('Home: the answer, Fig. 1 and the month in figures', async ({ page }) => {
+  await page.goto('/')
+  await expect(page).toHaveTitle('WindDesk · Day-ahead wind, as the desk saw it')
+  await expect(
+    page.getByRole('heading', { name: 'How much wind can the desk bank on at 09:20?' }),
+  ).toBeVisible()
+  await expect(page.getByText(/the answer was 9,523 MW on an average hour/)).toBeVisible()
+  await expectChartDrawn(page.locator('figure'))
+  await expect(page.locator('figure figcaption')).toContainText('Firm wind held in 23 of 24 hours')
+  await expect(region(page, 'January, judged at the 09:20 gate closure')).toContainText('2,023 MW')
+
+  await page.getByRole('link', { name: 'Open the Decision Desk' }).click()
+  await expect(page).toHaveURL(/\/desk$/)
+  await expect(page).toHaveTitle('Decision Desk · WindDesk')
+})
+
 test('Decision Desk: story day, confidence switch, what-if', async ({ page }) => {
-  await page.goto('/?date=2026-01-27')
+  await page.goto('/desk?date=2026-01-27')
   await expect(page).toHaveTitle('Decision Desk · WindDesk')
   await expect(page.getByRole('region', { name: 'Summary' })).toContainText(
     'expected 477 GWh of wind for Tue 27 Jan',
@@ -110,6 +126,11 @@ test('Deep links and unknown paths', async ({ page }) => {
   const api404 = await page.request.get('/api/nope')
   expect(api404.status()).toBe(404)
   expect((await api404.json()).error.code).toBe('not_found')
+
+  // Desk links from before the home page existed still open the Desk.
+  await page.goto('/?date=2026-01-27&view=trader')
+  await expect(page).toHaveURL(/\/desk\?date=2026-01-27&view=trader$/)
+  await expect(page).toHaveTitle('Decision Desk · WindDesk')
 
   await page.goto('/no-such-page')
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()

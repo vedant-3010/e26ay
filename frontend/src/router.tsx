@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import {
   AccuracyLabPage,
   DecisionDeskPage,
+  HomePage,
   LivePage,
   MethodologyPage,
   MonitorPage,
@@ -16,7 +17,9 @@ export const routes: RouteObject[] = [
   {
     element: <AppShell />,
     children: [
-      { index: true, element: <DecisionDeskPage />, errorElement: <RouteError /> },
+      // The home page also forwards old Desk links (`/?date=…`) to /desk.
+      { index: true, element: <HomePage />, errorElement: <RouteError /> },
+      { path: 'desk', element: <DecisionDeskPage />, errorElement: <RouteError /> },
       { path: 'monitor', element: <MonitorPage />, errorElement: <RouteError /> },
       { path: 'accuracy', element: <AccuracyLabPage />, errorElement: <RouteError /> },
       { path: 'methodology', element: <MethodologyPage />, errorElement: <RouteError /> },

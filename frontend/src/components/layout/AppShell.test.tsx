@@ -26,11 +26,12 @@ afterEach(() => {
 })
 
 describe('AppShell', () => {
-  it('renders the four tabs with the current page marked', async () => {
-    renderAt('/', healthy)
+  it('renders the tabs with the current page marked', async () => {
+    renderAt('/desk', healthy)
     const nav = screen.getByRole('navigation', { name: 'Main' })
     const links = within(nav).getAllByRole('link')
     expect(links.map((l) => l.textContent)).toEqual([
+      'Overview',
       'Decision Desk',
       'Monitor',
       'Accuracy Lab',
@@ -40,14 +41,28 @@ describe('AppShell', () => {
       'aria-current',
       'page',
     )
+    expect(within(nav).getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current')
     expect(await screen.findByRole('heading', { name: 'Decision Desk' })).toBeInTheDocument()
+  })
+
+  it('opens on the home page', async () => {
+    renderAt('/', healthy)
+    const nav = screen.getByRole('navigation', { name: 'Main' })
+    expect(within(nav).getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'How much wind can the desk bank on at 09:20?' }),
+    ).toBeInTheDocument()
   })
 
   it('shows version, short SHA and snapshot from /api/health', async () => {
     renderAt('/', healthy)
     expect(await screen.findByText('v1.0.0')).toBeInTheDocument()
     expect(screen.getByText('abc1234')).toBeInTheDocument()
-    expect(screen.getByText('a1b2c3')).toBeInTheDocument()
+    // The home page also names the snapshot; this checks the header badge.
+    expect(within(screen.getByRole('banner')).getByText('a1b2c3')).toBeInTheDocument()
   })
 
   it('says so when the API is unreachable', async () => {

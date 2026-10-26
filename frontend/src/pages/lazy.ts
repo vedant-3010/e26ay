@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 // Pages load on demand: ECharts ships only with the chart pages, not with the app shell.
+export const HomePage = lazy(() => import('./Home').then((m) => ({ default: m.HomePage })))
 export const DecisionDeskPage = lazy(() =>
   import('./DecisionDesk').then((m) => ({ default: m.DecisionDeskPage })),
 )

@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils'
 
 /** Top-level pages. Keep in sync with `routes` in router.tsx. */
 const NAV_ITEMS = [
-  { to: '/', label: 'Decision Desk' },
+  { to: '/', label: 'Overview' },
+  { to: '/desk', label: 'Decision Desk' },
   { to: '/monitor', label: 'Monitor' },
   { to: '/accuracy', label: 'Accuracy Lab' },
   { to: '/methodology', label: 'Methodology' },

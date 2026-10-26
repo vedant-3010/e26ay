@@ -16,15 +16,12 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
     />
     <script>
-      // Apply the theme before first paint: stored choice, else the OS preference (UI_SPEC §1).
+      // Apply the theme before first paint: the stored choice, else light (UI_SPEC §1).
       ;(function () {
         var theme = null
         try {
           theme = localStorage.getItem('winddesk-theme')
         } catch (e) {}
-        if (theme !== 'light' && theme !== 'dark') {
-          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        }
         document.documentElement.classList.toggle('dark', theme === 'dark')
       })()
     </script>

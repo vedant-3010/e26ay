@@ -105,7 +105,7 @@ sequenceDiagram
 │   └── src/
 │       ├── main.tsx, router.tsx
 │       ├── api/                  # schema.d.ts (GENERATED), client.ts, queries.ts
-│       ├── pages/                # DecisionDesk/, Monitor/, AccuracyLab/, Methodology/
+│       ├── pages/                # Home/, DecisionDesk/, Monitor/, AccuracyLab/, Methodology/
 │       ├── components/
 │       │   ├── layout/           # AppShell, TopNav, ThemeToggle, DataBadge
 │       │   ├── charts/           # EChart wrapper, theme.ts, one file per chart

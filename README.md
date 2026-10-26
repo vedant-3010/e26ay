@@ -19,7 +19,8 @@
 
 ## What it does
 
-- **Decision Desk:** pick a delivery day and an auction (EPEX 09:20, N2EX 09:50, or a custom cutoff). You see exactly the forecast the desk had at gate closure on the day before, the firm wind you could count on at 80/90/95% confidence, and, in Hindsight view, what actually happened and whether firm wind held.
+- **Overview** (`/`): the question the desk asks at 09:20 and the January answer, one real day annotated as Fig. 1, the month in four figures, and a map of the views.
+- **Decision Desk** (`/desk`): pick a delivery day and an auction (EPEX 09:20, N2EX 09:50, or a custom cutoff). You see exactly the forecast the desk had at gate closure on the day before, the firm wind you could count on at 80/90/95% confidence, and, in Hindsight view, what actually happened and whether firm wind held.
 - **Accuracy Lab:** how wrong the decision forecasts were across the month: MAE, bias, P90 shortfall, error by lead time and by wind level, buffers back-tested without look-ahead, the value of having a forecast at all, and whether the later auction's fresher run is worth it.
 - **Monitor:** actual vs forecast for any window at any horizon from 0 to 48 h. **Methodology** explains every definition and data check.
 
@@ -72,7 +73,7 @@ No secrets are needed. `.env.example` lists the optional settings. `WINDDESK_ENA
 | `backend/winddesk/main.py` · `store.py` · `config.py` | App factory, the in-memory data store built at startup, settings |
 | `backend/tests/` | pytest: `analytics/` (hand-computed expected values), `api/`, `ingest/`, and `contract/` (real-snapshot tests, marker `snapshot`) |
 | `frontend/e2e/` · `frontend/playwright.config.ts` | Playwright smoke tests (desktop and 375 px) on the production app |
-| `frontend/src/pages/` | Decision Desk, Monitor, Accuracy Lab, Methodology, plus the not-found and error pages (lazy-loaded) |
+| `frontend/src/pages/` | Overview (home), Decision Desk, Monitor, Accuracy Lab, Methodology, plus the not-found and error pages (lazy-loaded) |
 | `frontend/src/components/` | `charts/` (one ECharts wrapper plus pure option builders), `controls/`, `kpi/`, `layout/`, `feedback/`, `ui/` (shadcn) |
 | `frontend/src/api/` | Typed client: `schema.d.ts` is **generated** from OpenAPI (`make gen-api`); `queries.ts` holds the TanStack Query hooks |
 | `frontend/src/lib/` | All formatting (`format.ts`, `time.ts` in Europe/London), URL state, CSV export, glossary |

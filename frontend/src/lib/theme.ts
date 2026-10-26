@@ -2,7 +2,7 @@ export type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'winddesk-theme'
 
-/** The theme `index.html` applied before first paint (stored choice, else OS preference). */
+/** The theme `index.html` applied before first paint (the stored choice, else light). */
 export function currentTheme(): Theme {
   return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 }

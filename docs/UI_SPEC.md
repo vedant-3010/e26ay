@@ -24,7 +24,7 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 
 - Surfaces are flat, with 1px borders and 8px radius. There are no gradients and no drop shadows except on popovers.
 - **Density:** 14px base text; KPI values 28px mono; 24px section spacing; max content width 1280px.
-- **Light theme by default**, with a dark toggle stored in localStorage (wrapped in try/catch). Respect `prefers-color-scheme` on first visit.
+- **Light theme by default**, including on a first visit: the OS dark preference is not followed (the client's choice, 2026-10-27). The dark toggle is stored in localStorage (wrapped in try/catch).
 - Use the `frontend-design` skill if available for aesthetic decisions not covered here.
 
 ### 1.1 Refinement rules (Phase 6, applied app-wide)
@@ -39,7 +39,7 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────┐
-│ ◢ WindDesk   Decision Desk · Monitor · Accuracy Lab · Methodology    [◐] │
+│ ◢ WindDesk   Overview · Decision Desk · Monitor · Accuracy Lab · Methodology  [◐] │
 │             Pilot · Jan 2026 decisions · Elexon BMRS · snapshot a1b2c3   │
 ├───────────────────────────────────────────────────────────────────────────────┤
 │  <page>                                                                       │
@@ -52,7 +52,17 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 
 ## 3. Pages
 
-### 3.1 Decision Desk (`/`)
+### 3.0 Overview (`/`)
+The product's front page, written like a research note rather than a marketing page: left-aligned type, hairline rules, no hero gradient, icon cards or stock imagery. Every number comes from the API and every sentence about a day from the server's templates.
+- **Hero:** the question ("How much wind can the desk bank on at 09:20?"), one paragraph on what WindDesk does, and the answer from the Accuracy Lab's value of the forecast (average firm wind at the default confidence, and the gain over no forecast). Links: Open the Decision Desk (primary), How the numbers are made.
+- **Fig. 1:** the Desk's own chart in Hindsight view for Tue 27 Jan 2026 (EPEX, 90%), with its legend. The caption is that day's server summary, followed by a link that opens the day in the Desk.
+- **January, judged at the 09:20 gate closure:** a ruled fact sheet from the Accuracy Lab defaults: MAE (with WAPE), bias (its sentence follows the sign), P90 shortfall, and calibration (only when the API returns it).
+- **One decision, three moments:** D−1 07:30 run published, D−1 09:20 gate closure (the emphasised step), and delivery day D, each a sentence.
+- **Where to look:** an index of the four views, one line each.
+- A small note on the snapshot, the date range and the two main caveats.
+- Old Desk links (`/?date=…`, or any other Desk parameter) are forwarded to `/desk` with the same query, so shared URLs keep working.
+
+### 3.1 Decision Desk (`/desk`)
 
 ```
 ┌ Controls ────────────────────────────────────────────────────────────────────┐

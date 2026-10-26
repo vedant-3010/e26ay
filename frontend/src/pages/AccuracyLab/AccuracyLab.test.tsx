@@ -28,7 +28,7 @@ function renderAt(path: string, data = accuracyData()) {
   const router = createMemoryRouter(
     [
       { path: '/accuracy', element: <AccuracyLabPage /> },
-      { path: '/', element: <p>desk</p> },
+      { path: '/desk', element: <p>desk</p> },
     ],
     { initialEntries: [path] },
   )
@@ -115,7 +115,9 @@ describe('Accuracy Lab', () => {
     const router = renderAt('/accuracy')
     await screen.findByRole('region', { name: 'Worst hours' })
     await userEvent.click(screen.getByRole('button', { name: 'daily chart' }))
-    expect(router.state.location.pathname + router.state.location.search).toBe('/?date=2026-01-28')
+    expect(router.state.location.pathname + router.state.location.search).toBe(
+      '/desk?date=2026-01-28',
+    )
   })
 
   it('worst-hours rows link to the right day', async () => {
@@ -126,7 +128,7 @@ describe('Accuracy Lab', () => {
     const table = await screen.findByRole('region', { name: 'Worst hours' })
     expect(within(table).getByRole('link', { name: 'Mon 12 Jan 01:00' })).toHaveAttribute(
       'href',
-      '/?date=2026-01-12&auction=n2ex',
+      '/desk?date=2026-01-12&auction=n2ex',
     )
     expect(within(table).getByText('+6,894 MW')).toBeInTheDocument()
     fireEvent.click(within(table).getByText('20,942 MW'))
