@@ -113,4 +113,10 @@ test('Deep links and unknown paths', async ({ page }) => {
 
   await page.goto('/no-such-page')
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+
+  // Live mode (F8) is off unless WINDDESK_ENABLE_LIVE=true: the page says so, the API is a 404.
+  expect((await page.request.get('/api/live')).status()).toBe(404)
+  await page.goto('/live')
+  await expect(page.getByText(/Live mode is switched off on this server/)).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Live' })).toHaveCount(0)
 })

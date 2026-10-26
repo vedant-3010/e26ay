@@ -11,7 +11,7 @@ from .convert import when
 
 
 @lru_cache(maxsize=4)
-def meta(store: DataStore) -> schemas.MetaResponse:
+def meta(store: DataStore, live_enabled: bool = False) -> schemas.MetaResponse:
     quality = store.quality
     checks = {c["id"]: c for c in quality["checks"]}
     summary = quality["summary"]
@@ -67,4 +67,5 @@ def meta(store: DataStore) -> schemas.MetaResponse:
                 for c in quality["checks"]
             ],
         ),
+        live_enabled=live_enabled,
     )

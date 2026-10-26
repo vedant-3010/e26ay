@@ -54,9 +54,11 @@ Everything the UI needs to bootstrap: bounds, presets, defaults and the data-qua
   "quality": {"status": "warn",
               "summary": {"forecast_runs": 272, "forecast_rows": 14847, "forecast_duplicates_removed": 0,
                           "actual_rows": 1536, "actual_duplicates_removed": 0, "missing_periods": 0},
-              "checks": [{"id": "runs_per_day", "status": "ok", "message": "8 runs on every one of 34 publish days"}]}
+              "checks": [{"id": "runs_per_day", "status": "ok", "message": "8 runs on every one of 34 publish days"}]},
+  "live_enabled": false
 }
 ```
+`live_enabled` (added in Phase 9) tells the UI whether to show the Live tab; it is part of the meta ETag key.
 `bounds.target_to` is **exclusive** (the end of the data; the last half-hour starts 2026-02-01T23:30Z). `forecast_runs.run_times_utc` is the **nominal** schedule. Runs published at other times (in the pilot, one: 2026-01-15 12:25 UTC) are listed by the `run_times` quality check (DATA §1.2). `rows` and `forecast_runs.count` above are the real Phase 1 snapshot figures.
 
 ## `GET /api/monitor`
@@ -155,7 +157,16 @@ Accuracy Lab payload (DATA §5.5–5.12).
 - Sections marked "Should" in the PRD may return `null` until built. The frontend must handle `null` sections gracefully.
 
 ## (Could) `GET /api/live`
-Behind `WINDDESK_ENABLE_LIVE=true`. Fetches the latest WINDFOR run from Elexon (in-process cache, 10 min TTL) and returns tomorrow's forecast in the `decision` payload shape, with `actual` and `kpis` limited to forecast-side fields. Returns 404 when disabled.
+Behind `WINDDESK_ENABLE_LIVE=true`; returns a 404 (`not_found`) when the flag is off. Built in Phase 9 as specified, with these details settled:
+
+- **Params:** `confidence` (0.8 | 0.9 | 0.95, default 0.9). An invalid value returns 422.
+- **Fetch:** the runs published on the UTC days D−2 and D−1 come straight from Elexon (10 s timeout, one retry, nothing written to disk). They are kept in memory for **10 minutes** and shared by all requests and confidences; a failure is not cached.
+- **As of:** the delivery day D is tomorrow in UK time. The cutoff is the fetch time on D−1 in UK time, **floored to 15 minutes**, and feeds the unchanged `/decision` pipeline. So only runs published by then are used (no look-ahead), and buffers are fitted on the pilot snapshot's decision pairs for that cutoff time. A nominal hh:30 run is never hidden by the flooring; an off-schedule run can appear up to 15 minutes late.
+- **Body:** the `/decision` shape with `cutoff.auction = "custom"`, `actual: []`, every outcome KPI `null`, and `firm_hours_kept = firm_hours_total = 0`. `summary` and `summary_trader` are therefore the same. It also has
+  `"live": {"fetched_at": "2026-10-26T14:54:12Z", "ttl_s": 600, "calibration_snapshot_id": "ac22a4140bca"}`.
+- **Headers:** `Cache-Control: public, max-age=60, s-maxage=300`, with no ETag (this is not snapshot data).
+- **Errors:** Elexon unreachable, or no run covering D yet → **502** `upstream_unavailable`.
+- **Checked against the real API on 2026-10-26:** the first call took 0.8 s and a cached call 15 ms. As of 14:45 it used the 11:30 UTC run, 12.5–35.5 h ahead of Tue 27 Oct.
 
 ---
 
@@ -166,6 +177,7 @@ winddesk/api/
   routes_monitor.py   # /monitor
   routes_decision.py  # /decision
   routes_accuracy.py  # /accuracy
+  routes_live.py      # /live (Could, behind WINDDESK_ENABLE_LIVE)
   schemas.py          # Pydantic v2 response/param models (single file is fine at this size)
   deps.py             # get_store() dependency, param normalization
   caching.py          # ETag/Cache-Control helper

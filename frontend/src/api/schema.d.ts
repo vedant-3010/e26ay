@@ -55,6 +55,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Could-have: tomorrow's forecast and firm wind as of now, live from Elexon
+         * @description Off unless WINDDESK_ENABLE_LIVE=true (404). Fetches the latest WINDFOR runs (kept for 10 minutes) and answers in the /decision shape with the fetch time on D−1 as the cutoff; actuals are empty and outcome fields null. 502 if Elexon is unavailable.
+         */
+        get: operations["get_live_api_live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/meta": {
         parameters: {
             query?: never;
@@ -599,6 +619,61 @@ export interface components {
             /** P95 Shortfall Mw */
             p95_shortfall_mw: number | null;
         };
+        /** LiveInfo */
+        LiveInfo: {
+            /**
+             * Calibration Snapshot Id
+             * @description The pilot snapshot whose decision pairs the buffers are fitted on.
+             */
+            calibration_snapshot_id: string;
+            /**
+             * Fetched At
+             * Format: date-time
+             * @description When the runs were fetched from Elexon (UTC).
+             */
+            fetched_at: string;
+            /**
+             * Ttl S
+             * @description Fetched runs are reused for this long (seconds).
+             */
+            ttl_s: number;
+        };
+        /**
+         * LiveResponse
+         * @description Tomorrow (UK) as of the fetch time, in the decision shape: ``cutoff`` is the fetch time on
+         *     D−1 floored to 15 minutes, ``actual`` is empty and every outcome field is null.
+         */
+        LiveResponse: {
+            /**
+             * Actual
+             * @description Half-hourly actuals (shown in Hindsight only).
+             */
+            actual: components["schemas"]["TimeValue"][];
+            buffers: components["schemas"]["Buffers"];
+            cutoff: components["schemas"]["Cutoff"];
+            /**
+             * Delivery Date
+             * Format: date
+             */
+            delivery_date: string;
+            /** Forecast */
+            forecast: components["schemas"]["DecisionForecastPoint"][];
+            kpis: components["schemas"]["DecisionKpis"];
+            live: components["schemas"]["LiveInfo"];
+            run: components["schemas"]["DecisionRunInfo"];
+            /**
+             * Summary
+             * @description Templated summary including the outcome (Hindsight view).
+             */
+            summary: string;
+            /**
+             * Summary Trader
+             * @description The same summary without any outcome (Trader view).
+             */
+            summary_trader: string;
+            /** Vintages */
+            vintages: components["schemas"]["Vintage"][];
+        };
         /** MetaResponse */
         MetaResponse: {
             /** Auctions */
@@ -616,6 +691,11 @@ export interface components {
             defaults: components["schemas"]["Defaults"];
             forecast_runs: components["schemas"]["ForecastRuns"];
             horizon: components["schemas"]["Horizon"];
+            /**
+             * Live Enabled
+             * @description True when GET /api/live is switched on (WINDDESK_ENABLE_LIVE).
+             */
+            live_enabled: boolean;
             /**
              * Product
              * @constant
@@ -985,6 +1065,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_live_api_live_get: {
+        parameters: {
+            query?: {
+                /** @description Firm-wind confidence: 0.8, 0.9 or 0.95. */
+                confidence?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

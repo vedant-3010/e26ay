@@ -1,7 +1,13 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
 
 import { AppShell } from '@/components/layout/AppShell'
-import { AccuracyLabPage, DecisionDeskPage, MethodologyPage, MonitorPage } from '@/pages/lazy'
+import {
+  AccuracyLabPage,
+  DecisionDeskPage,
+  LivePage,
+  MethodologyPage,
+  MonitorPage,
+} from '@/pages/lazy'
 import { NotFoundPage } from '@/pages/NotFound'
 import { RouteError } from '@/pages/RouteError'
 
@@ -14,6 +20,8 @@ export const routes: RouteObject[] = [
       { path: 'monitor', element: <MonitorPage />, errorElement: <RouteError /> },
       { path: 'accuracy', element: <AccuracyLabPage />, errorElement: <RouteError /> },
       { path: 'methodology', element: <MethodologyPage />, errorElement: <RouteError /> },
+      // Could-have (PRD F8): the page explains itself when the server has live mode off.
+      { path: 'live', element: <LivePage />, errorElement: <RouteError /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

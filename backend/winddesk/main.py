@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from starlette.middleware.gzip import GZipMiddleware
 
 from . import __version__
-from .api import routes_accuracy, routes_decision, routes_meta, routes_monitor
+from .api import routes_accuracy, routes_decision, routes_live, routes_meta, routes_monitor
 from .api.errors import install_error_handlers
 from .config import get_settings
 from .logs import configure_logging
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_monitor.router, prefix="/api", tags=["monitor"])
     app.include_router(routes_decision.router, prefix="/api", tags=["decision"])
     app.include_router(routes_accuracy.router, prefix="/api", tags=["accuracy"])
+    app.include_router(routes_live.router, prefix="/api", tags=["live"])
 
     # Unknown /api paths must 404 as JSON rather than fall through to the SPA's index.html.
     @app.api_route("/api/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)

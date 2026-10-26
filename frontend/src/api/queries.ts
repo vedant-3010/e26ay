@@ -7,6 +7,7 @@ import {
   type AccuracyData,
   type DecisionData,
   type Health,
+  type LiveData,
   type Meta,
   type MonitorData,
 } from './client'
@@ -76,6 +77,19 @@ export function useDecision(args: DecisionArgs, enabled = true) {
     queryFn: (): Promise<DecisionData> =>
       call(api.GET('/api/decision', { params: { query: args } })),
     placeholderData: keepPreviousData,
+    enabled,
+  })
+}
+
+/** Live mode (PRD F8): the server re-fetches Elexon every 10 minutes, so an open tab follows. */
+export function useLive(confidence: number, enabled = true) {
+  return useQuery({
+    queryKey: ['live', confidence],
+    queryFn: (): Promise<LiveData> =>
+      call(api.GET('/api/live', { params: { query: { confidence } } })),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
     enabled,
   })
 }

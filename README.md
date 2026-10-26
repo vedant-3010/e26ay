@@ -23,6 +23,10 @@
 - **Accuracy Lab:** how wrong the decision forecasts were across the month: MAE, bias, P90 shortfall, error by lead time and by wind level, buffers back-tested without look-ahead, the value of having a forecast at all, and whether the later auction's fresher run is worth it.
 - **Monitor:** actual vs forecast for any window at any horizon from 0 to 48 h. **Methodology** explains every definition and data check.
 
+Two optional extras, added in Phase 9:
+- A **procurement what-if** on the Desk. You enter demand and your share of national wind, and it shows what is left to buy at the forecast and at firm wind. It is illustrative and runs in the browser.
+- A **Live** tab, off by default. It shows tomorrow's forecast as of now, live from Elexon (`WINDDESK_ENABLE_LIVE=true`; see [API.md](docs/API.md)).
+
 Headline findings, from [`docs/INSIGHTS.md`](docs/INSIGHTS.md):
 
 - At the 09:20 cutoff, tomorrow's forecast is typically off by **2,023 MW**, and it runs high by **1,746 MW** on average.
@@ -54,7 +58,7 @@ make ingest ARGS="--offline"   # rebuild from the local raw cache only
 make notebook                  # re-run the analysis notebook; it rewrites docs/INSIGHTS.md
 ```
 
-No secrets are needed. `.env.example` lists the optional settings. Run `make help` for every target.
+No secrets are needed. `.env.example` lists the optional settings. `WINDDESK_ENABLE_LIVE=true` switches on the Live tab, which calls Elexon at request time; it is off by default because the brief limits the data to the pilot window. Run `make help` for every target.
 
 ## Files and directories
 
@@ -63,7 +67,7 @@ No secrets are needed. `.env.example` lists the optional settings. Run `make hel
 | `backend/winddesk/` | The Python package: one FastAPI app serving `/api` and the built SPA |
 | `backend/winddesk/analytics/` | **Pure** analytics with no I/O: run selection (`selection.py`), metrics, LODO buffers, accuracy breakdowns, the decision day, templated narrative text, pilot constants |
 | `backend/winddesk/ingest/` | `python -m winddesk.ingest`: Elexon client, normalisation to UTC, data-quality checks |
-| `backend/winddesk/services/` | Cached use cases (monitor, decision, accuracy, meta) that call analytics on the loaded store |
+| `backend/winddesk/services/` | Cached use cases (monitor, decision, accuracy, meta, and the optional live mode) that call analytics on the loaded store |
 | `backend/winddesk/api/` | Thin routers, Pydantic schemas, parameter validation, ETag/Cache-Control, the error envelope, OpenAPI export |
 | `backend/winddesk/main.py` · `store.py` · `config.py` | App factory, the in-memory data store built at startup, settings |
 | `backend/tests/` | pytest: `analytics/` (hand-computed expected values), `api/`, `ingest/`, and `contract/` (real-snapshot tests, marker `snapshot`) |
@@ -152,8 +156,8 @@ The full specification is [`docs/DATA_AND_ANALYTICS.md`](docs/DATA_AND_ANALYTICS
 
 | Layer | What runs |
 |---|---|
-| Backend | `ruff` (lint and format), `mypy --strict` on analytics, services and api, and **438 pytest tests**: 295 fast tests, gated at ≥ 90% line coverage on `winddesk.analytics` (currently 99%), plus 143 contract tests on the real snapshot |
-| Frontend | ESLint, Prettier, `tsc` (strict, no `any`), **100 Vitest tests** (formatting, URL state, chart option builders, every page's states), and a production build |
+| Backend | `ruff` (lint and format), `mypy --strict` on analytics, services and api, and **450 pytest tests**: 307 fast tests, gated at ≥ 90% line coverage on `winddesk.analytics` (currently 99%), plus 143 contract tests on the real snapshot |
+| Frontend | ESLint, Prettier, `tsc` (strict, no `any`), **103 Vitest tests** (formatting, URL state, chart option builders, every page's states), and a production build |
 | API contract | `make gen-api-check`: CI fails if the committed TypeScript types drift from the OpenAPI schema |
 | End-to-end | `make test-e2e`: **Playwright** against FastAPI serving the production build, at desktop width and 375 px. Every page loads, one control changes the view, the charts actually paint, there are no console errors and no horizontal overflow. It runs as its own CI job |
 | Docker | The image is built, run and smoke-tested (`/api/health` and the SPA) in CI |

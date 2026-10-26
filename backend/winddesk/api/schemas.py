@@ -166,6 +166,9 @@ class MetaResponse(Schema):
     horizon: Horizon
     defaults: Defaults
     quality: Quality
+    live_enabled: bool = Field(
+        description="True when GET /api/live is switched on (WINDDESK_ENABLE_LIVE)."
+    )
 
 
 # ---------------------------------------------------------------- /monitor
@@ -278,6 +281,24 @@ class DecisionResponse(Schema):
     vintages: list[Vintage]
     summary: str = Field(description="Templated summary including the outcome (Hindsight view).")
     summary_trader: str = Field(description="The same summary without any outcome (Trader view).")
+
+
+# ---------------------------------------------------------------- /live (Could, PRD F8)
+
+
+class LiveInfo(Schema):
+    fetched_at: datetime = Field(description="When the runs were fetched from Elexon (UTC).")
+    ttl_s: int = Field(description="Fetched runs are reused for this long (seconds).")
+    calibration_snapshot_id: str = Field(
+        description="The pilot snapshot whose decision pairs the buffers are fitted on."
+    )
+
+
+class LiveResponse(DecisionResponse):
+    """Tomorrow (UK) as of the fetch time, in the decision shape: ``cutoff`` is the fetch time on
+    D−1 floored to 15 minutes, ``actual`` is empty and every outcome field is null."""
+
+    live: LiveInfo
 
 
 # ---------------------------------------------------------------- /accuracy

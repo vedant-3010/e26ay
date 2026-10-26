@@ -67,7 +67,7 @@ React + FastAPI, Docker, Vercel. Two Elexon datasets, January 2026 decisions, a 
 - Frontend: TanStack Query, view state in the URL (shareable), one ECharts wrapper that loads ECharts on first chart mount, semantic colour tokens. Slow-4G first load is 1.4–2.1 s LCP (budget 2.5 s).
 
 **8:15 – 9:00 · Quality and delivery**
-- `make check` is the single gate. CI runs lint, types, tests (438 backend tests, 99% coverage on analytics; 86 frontend tests), build and docker build.
+- `make check` is the single gate. CI runs lint, types, tests (450 backend tests, 99% coverage on analytics; 103 frontend tests), build and docker build, plus Playwright smoke tests at desktop and 375 px.
 - Vercel config notes: entrypoint, bundle exclusions, SPA on the CDN (`cdn = true` because of the GZip middleware).
 - **AI usage:** planning documents and implementation were done with Claude Code. Say how you steered and reviewed it: phase-by-phase DoD, tests written against hand-computed values, and decisions recorded as ADRs and in `PROGRESS.md`.
 

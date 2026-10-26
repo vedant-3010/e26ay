@@ -8,6 +8,7 @@ export const MonitorPage = lazy(() => import('./Monitor').then((m) => ({ default
 export const AccuracyLabPage = lazy(() =>
   import('./AccuracyLab').then((m) => ({ default: m.AccuracyLabPage })),
 )
+export const LivePage = lazy(() => import('./Live').then((m) => ({ default: m.LivePage })))
 export const MethodologyPage = lazy(() =>
   import('./Methodology').then((m) => ({ default: m.MethodologyPage })),
 )

@@ -10,9 +10,11 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Annotated, Literal
 
-from fastapi import Query
+from fastapi import HTTPException, Query
 
 from ..analytics import pilot
+from ..config import get_settings
+from ..services.live import LiveCache, get_live_cache
 from ..store import DataStore, get_store
 
 
@@ -201,3 +203,21 @@ def accuracy_params(
     h = _horizon(horizon_h) if population == "horizon" else pilot.HORIZON_DEFAULT_H
     a: pilot.AuctionId = auction if population == "decision" else pilot.DEFAULT_AUCTION
     return AccuracyQuery(population, a, h, first, last, _confidence(confidence))
+
+
+# ---------------------------------------------------------------- /live (Could, PRD F8)
+
+
+def require_live() -> None:
+    """Live mode is a Could-have behind a flag (PRD F8): 404 unless WINDDESK_ENABLE_LIVE=true."""
+    if not get_settings().enable_live:
+        raise HTTPException(404, "Live mode is disabled (set WINDDESK_ENABLE_LIVE=true)")
+
+
+def live_params(confidence: Confidence = pilot.DEFAULT_CONFIDENCE) -> float:
+    return _confidence(confidence)
+
+
+def live_cache_dep() -> LiveCache:
+    """The process-wide live cache (overridden in tests with a fake fetch and clock)."""
+    return get_live_cache()

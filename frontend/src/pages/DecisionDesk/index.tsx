@@ -164,20 +164,25 @@ function Desk({ meta }: { meta: Meta }) {
   )
 }
 
-function DeskBody({
+/** Everything below the controls. The Live page reuses it (`live`): its cutoff is the fetch
+ * time rather than an auction, and the day has not happened yet. */
+export function DeskBody({
   data,
   hindsight,
   meta,
+  live = false,
 }: {
   data: DecisionData
   hindsight: boolean
   meta: Meta
+  live?: boolean
 }) {
   const k = data.kpis
   const pct = Math.round(data.buffers.confidence * 100)
   const day = fmtUkDay(data.forecast[0]?.t ?? `${data.delivery_date}T00:00:00Z`)
-  const auctionLabel =
-    data.cutoff.auction === 'custom'
+  const auctionLabel = live
+    ? 'latest runs fetched from Elexon'
+    : data.cutoff.auction === 'custom'
       ? 'custom cutoff'
       : (meta.auctions.find((a) => a.id === data.cutoff.auction)?.label ?? data.cutoff.auction)
   const hours = data.forecast.length
@@ -252,7 +257,11 @@ function DeskBody({
         </div>
       )}
 
-      <DecisionTimeline data={data} auctionLabel={auctionLabel} />
+      <DecisionTimeline
+        data={data}
+        auctionLabel={auctionLabel}
+        cutoffLabel={live ? 'As of' : undefined}
+      />
 
       <section aria-label="Key figures" className="mb-4">
         <Readout
@@ -292,11 +301,12 @@ function DeskBody({
           }
           footnote={
             <>
-              The band runs from firm wind up to the forecast: the {pct}% buffer, learned only from
-              other days.{' '}
-              {hindsight
-                ? 'Shaded amber where wind came in below the forecast, red where it fell below firm wind too.'
-                : 'Switch to Hindsight to see what actually happened.'}
+              The band runs from firm wind up to the forecast: the {pct}% buffer,{' '}
+              {live
+                ? 'learned from the January 2026 pilot at the same time of day. The day has not happened yet, so there is no actual.'
+                : hindsight
+                  ? 'learned only from other days. Shaded amber where wind came in below the forecast, red where it fell below firm wind too.'
+                  : 'learned only from other days. Switch to Hindsight to see what actually happened.'}
             </>
           }
         >
@@ -308,9 +318,11 @@ function DeskBody({
           description={`Every run published in the 48 hours before ${day}; older runs are lighter`}
           legend={vintagesLegend(data, hindsight)}
           footnote={
-            hindsight
-              ? 'Dashed runs were published after the cutoff and were not available at decision time.'
-              : 'Runs published after the cutoff are hidden in the Trader view.'
+            live
+              ? 'Every run Elexon had published for this day by the fetch time.'
+              : hindsight
+                ? 'Dashed runs were published after the cutoff and were not available at decision time.'
+                : 'Runs published after the cutoff are hidden in the Trader view.'
           }
         >
           <VintagesChart data={data} hindsight={hindsight} />

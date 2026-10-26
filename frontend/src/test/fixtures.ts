@@ -1,7 +1,15 @@
 /** Typed API payloads for tests. The generated types keep them honest against the contract. */
 import { screen } from '@testing-library/react'
 
-import type { AccuracyData, DecisionData, Health, Meta, Metrics, MonitorData } from '@/api/client'
+import type {
+  AccuracyData,
+  DecisionData,
+  Health,
+  LiveData,
+  Meta,
+  Metrics,
+  MonitorData,
+} from '@/api/client'
 
 export const HEALTH: Health = {
   status: 'ok',
@@ -52,6 +60,7 @@ export const META: Meta = {
       { id: 'runs_per_day', status: 'ok', message: '8 runs on every one of 34 publish days' },
     ],
   },
+  live_enabled: false,
 }
 
 export const METRICS: Metrics = {
@@ -191,6 +200,33 @@ export function decisionData(overrides: Partial<DecisionData> = {}): DecisionDat
     summary_trader:
       'At 09:20 on Wed 14 Jan, the latest forecast (published 07:30) covered only 3 of 4 hours.',
     ...overrides,
+  }
+}
+
+/** Live mode (F8): the decision shape as of the fetch, with no actuals and no outcome. */
+export function liveData(): LiveData {
+  const d = decisionData()
+  return {
+    ...d,
+    cutoff: { local: '10:00', utc: '2026-01-14T10:00:00Z', auction: 'custom' },
+    actual: [],
+    kpis: {
+      ...d.kpis,
+      actual_mwh: null,
+      energy_error_pct: null,
+      mae_mw: null,
+      bias_mw: null,
+      max_shortfall_mw: null,
+      max_shortfall_at: null,
+      firm_hours_kept: 0,
+      firm_hours_total: 0,
+    },
+    summary: d.summary_trader,
+    live: {
+      fetched_at: '2026-01-14T10:07:00Z',
+      ttl_s: 600,
+      calibration_snapshot_id: 'ac22a4140bca',
+    },
   }
 }
 

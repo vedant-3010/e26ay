@@ -215,7 +215,7 @@ Gotchas to verify:
 | Env var | Default | Purpose |
 |---|---|---|
 | `WINDDESK_DATA_DIR` | `data/snapshot` | snapshot location |
-| `WINDDESK_ENABLE_LIVE` | `false` | Could-have live mode |
+| `WINDDESK_ENABLE_LIVE` | `false` | Could-have live mode (built in Phase 9): `GET /api/live` and the Live tab. When true, the server calls Elexon at request time, cached for 10 minutes (API.md) |
 | `WINDDESK_LOG_LEVEL` | `INFO` | logging |
 | `GIT_SHA` / `VERCEL_GIT_COMMIT_SHA` | – | shown in `/api/health` |
 

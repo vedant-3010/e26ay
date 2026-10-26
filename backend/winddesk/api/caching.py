@@ -1,8 +1,9 @@
 """HTTP caching for data responses (API.md, Conventions).
 
 Responses are deterministic for a given snapshot, so the ETag is ``"{snapshot_id}-{hash(query)}"``
-and the CDN may keep them for a day. This is done per response rather than in middleware:
-top-level middleware would stop Vercel from serving the SPA from its CDN (ADR-0002).
+and the CDN may keep them for a day. This is done per response rather than in middleware, so
+each endpoint picks its own key. Live responses (PRD F8) are not snapshot data: they get
+``LIVE_CACHE_CONTROL`` and no ETag.
 """
 
 import hashlib
@@ -11,6 +12,8 @@ from fastapi import Request, Response
 from pydantic import BaseModel
 
 CACHE_CONTROL = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800"
+#: Live answers change when a new run is published; the server re-fetches every 10 minutes.
+LIVE_CACHE_CONTROL = "public, max-age=60, s-maxage=300"
 
 
 def etag_for(snapshot_id: str, key: str) -> str:

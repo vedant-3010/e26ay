@@ -132,6 +132,11 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 ### 3.4 Methodology (`/methodology`)
 Long-form, readable page with a max width of 760px and anchored sections: Data sources (with links) · Pilot window · Definitions (glossary from the PRD) · How we pick the forecast (inline SVG timeline: runs ticking along the top, cutoff line, delivery day block, lead-time arrow) · Alignment · Buffers & calibration · Data quality table (from `/api/meta`) · Limitations.
 
+### 3.5 Live (`/live`, Could, PRD F8; added in Phase 9)
+- Shown in the nav only when `/api/meta` reports `live_enabled`. A direct visit while it is off explains how to switch it on, and never calls `/api/live`.
+- Controls: confidence only (URL `conf`), plus a status line: "Fetched from Elexon at HH:MM, re-fetched every 10 minutes · buffers from snapshot …".
+- The body is the Decision Desk's Trader view (`DeskBody` with `live`). The timeline's middle step reads **As of** (fetch time) instead of Gate closure. Footnotes say the buffer was learned from the January pilot and that the day has not happened yet. The procurement what-if works the same way.
+
 ## 4. Chart specifications (ECharts)
 
 | Chart | Type | X | Y | Notes |

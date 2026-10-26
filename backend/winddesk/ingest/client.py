@@ -2,6 +2,7 @@
 
 Each chunk's response body is cached verbatim at ``data/raw/{dataset}/{chunk}.json``. Re-runs
 read the cache unless ``refresh`` is set; ``offline`` never touches the network.
+``fetch_records`` is the cache-free variant used by live mode (PRD F8) at request time.
 """
 
 import asyncio
@@ -24,6 +25,8 @@ USER_AGENT = "WindDesk-pilot/1.0"
 TIMEOUT_S = 30.0
 MAX_CONCURRENCY = 4
 BACKOFF_S = (1.0, 2.0, 4.0, 8.0)  # waits between attempts; 5 attempts in total
+LIVE_TIMEOUT_S = 10.0
+LIVE_BACKOFF_S = (1.0,)  # at request time: one quick retry, then report the failure
 RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 FUELHH_DAYS_PER_REQUEST = 7
 
@@ -104,9 +107,14 @@ def parse_records(payload: bytes, source: str) -> list[dict[str, Any]]:
 Sleep = Callable[[float], Awaitable[None]]
 
 
-async def _get_with_retries(client: httpx.AsyncClient, chunk: Chunk, sleep: Sleep) -> bytes:
+async def _get_with_retries(
+    client: httpx.AsyncClient,
+    chunk: Chunk,
+    sleep: Sleep,
+    backoff: Sequence[float] = BACKOFF_S,
+) -> bytes:
     last_error = ""
-    for attempt in range(len(BACKOFF_S) + 1):
+    for attempt in range(len(backoff) + 1):
         try:
             response = await client.get(chunk.path, params=list(chunk.params))
         except httpx.TransportError as exc:  # includes timeouts
@@ -117,10 +125,10 @@ async def _get_with_retries(client: httpx.AsyncClient, chunk: Chunk, sleep: Slee
             if response.status_code not in RETRY_STATUS:
                 raise IngestError(f"{chunk.url}: HTTP {response.status_code}")
             last_error = f"HTTP {response.status_code}"
-        if attempt < len(BACKOFF_S):
+        if attempt < len(backoff):
             log.warning("retrying", extra={"chunk": chunk.url, "error": last_error})
-            await sleep(BACKOFF_S[attempt])
-    raise IngestError(f"{chunk.url}: giving up after {len(BACKOFF_S) + 1} attempts ({last_error})")
+            await sleep(backoff[attempt])
+    raise IngestError(f"{chunk.url}: giving up after {len(backoff) + 1} attempts ({last_error})")
 
 
 async def _fetch_one(
@@ -201,3 +209,27 @@ def fetch_chunks(
             chunks, raw_dir, offline=offline, refresh=refresh, transport=transport, sleep=sleep
         )
     )
+
+
+def fetch_records(
+    chunks: Sequence[Chunk],
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+    sleep: Sleep = asyncio.sleep,
+) -> list[list[dict[str, Any]]]:
+    """Fetch every chunk straight from Elexon, with a short timeout and one retry, and write
+    nothing to disk (live mode, PRD F8; Vercel functions have a read-only filesystem)."""
+
+    async def run() -> list[list[dict[str, Any]]]:
+        async with httpx.AsyncClient(
+            base_url=BASE_URL,
+            timeout=LIVE_TIMEOUT_S,
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            transport=transport,
+        ) as client:
+            payloads = await asyncio.gather(
+                *(_get_with_retries(client, c, sleep, LIVE_BACKOFF_S) for c in chunks)
+            )
+        return [parse_records(p, c.url) for p, c in zip(payloads, chunks, strict=True)]
+
+    return asyncio.run(run())

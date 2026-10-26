@@ -35,4 +35,8 @@ def health(response: Response) -> HealthResponse:
     responses={304: {"description": "Not modified (ETag matched)"}, 500: {"model": ErrorResponse}},
 )
 def get_meta(request: Request, store: Annotated[DataStore, Depends(store_dep)]) -> Response:
-    return cached_json(request, meta(store), snapshot_id=store.snapshot_id, key="meta")
+    live_enabled = get_settings().enable_live
+    body = meta(store, live_enabled)
+    return cached_json(
+        request, body, snapshot_id=store.snapshot_id, key=f"meta|live={live_enabled}"
+    )

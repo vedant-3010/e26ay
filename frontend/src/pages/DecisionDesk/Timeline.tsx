@@ -15,9 +15,12 @@ interface Step {
 export function DecisionTimeline({
   data,
   auctionLabel,
+  cutoffLabel = 'Gate closure',
 }: {
   data: DecisionData
   auctionLabel: string
+  /** Live mode calls the cutoff "As of": it is the fetch time, not an auction. */
+  cutoffLabel?: string
 }) {
   const day = fmtUkDay(data.forecast[0]?.t ?? `${data.delivery_date}T00:00:00Z`)
   const steps: Step[] = [
@@ -26,7 +29,7 @@ export function DecisionTimeline({
       value: data.run.publish_time ? fmtUkDateTime(data.run.publish_time) : 'None published',
       note: 'latest published before the cutoff',
     },
-    { label: 'Gate closure', value: fmtUkDateTime(data.cutoff.utc), note: auctionLabel },
+    { label: cutoffLabel, value: fmtUkDateTime(data.cutoff.utc), note: auctionLabel },
     {
       label: 'Delivery',
       value: day,

@@ -2,9 +2,9 @@
 
 from datetime import date, time
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, cast
 
-from ..analytics.decision import decision_day
+from ..analytics.decision import DecisionDay, decision_day
 from ..analytics.narrative import decision_summary
 from ..api import schemas
 from ..store import DataStore
@@ -28,11 +28,19 @@ def decision(
         cutoff_local=cutoff_local,
         confidence=confidence,
     )
+    return to_response(day)
+
+
+def to_response(day: DecisionDay, *, with_actual: bool = True) -> schemas.DecisionResponse:
+    """The API shape of a decision day; ``with_actual=False`` leaves the actuals list empty (live
+    mode, where the delivery day has not happened yet)."""
     run, k, model = day.run, day.kpis, day.buffers
+    # DecisionDay keeps the auction id it was given; callers only pass these three values.
+    auction = cast(Literal["epex", "n2ex", "custom"], day.auction)
     return schemas.DecisionResponse(
-        delivery_date=delivery_date,
+        delivery_date=day.delivery_date,
         cutoff=schemas.Cutoff(
-            local=f"{cutoff_local:%H:%M}", utc=day.cutoff_utc.to_pydatetime(), auction=auction
+            local=f"{day.cutoff_local:%H:%M}", utc=day.cutoff_utc.to_pydatetime(), auction=auction
         ),
         run=schemas.DecisionRunInfo(
             publish_time=when(run.publish_time),
@@ -50,7 +58,9 @@ def decision(
         actual=[
             schemas.TimeValue(t=r.target_time, mw=num(r.actual_mw))
             for r in day.actual.itertuples(index=False)
-        ],
+        ]
+        if with_actual
+        else [],
         kpis=schemas.DecisionKpis(
             forecast_mwh=k.forecast_mwh,
             actual_mwh=k.actual_mwh,
