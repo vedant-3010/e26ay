@@ -154,9 +154,9 @@ Three pitch sentences: …
 
 ## Phase 8 — Polish, README, release
 
-- [ ] 8.1 UX pass against UI_SPEC §5–7: copy, units, states, keyboard, reduced motion, 375px.
-- [ ] 8.2 Performance: bundle size and API timings on the production URL (`curl -w '%{time_total}'`, warm, 5 runs each). Record in `PROGRESS.md`.
-- [ ] 8.3 **README.md** containing:
+- [x] 8.1 UX pass against UI_SPEC §5–7: copy, units, states, keyboard, reduced motion, 375px.
+- [ ] 8.2 Performance: bundle size and API timings on the production URL (`curl -w '%{time_total}'`, warm, 5 runs each). Record in `PROGRESS.md`. *(Measured on the production Docker image and recorded; LCP fixed. Re-run on the URL after 8.5.)*
+- [x] 8.3 **README.md** containing:
   - name, one-liner, **live link**, video link placeholder
   - screenshot(s)
   - what it does (3 bullets)
@@ -168,7 +168,7 @@ Three pitch sentences: …
   - deployment
   - **AI tools used**: state explicitly that Claude Code (Anthropic) was used for planning documents and implementation under human direction and review, and say what was reviewed or verified by hand
   - limitations and next steps
-- [ ] 8.4 Fill the numbers in `docs/DEMO_SCRIPT.md` from `INSIGHTS.md`.
+- [x] 8.4 Fill the numbers in `docs/DEMO_SCRIPT.md` from `INSIGHTS.md`.
 - [ ] 8.5 Final deploy. 👤 Human verifies in incognito: the app URL, the repo URL (public), and the README renders.
 - [ ] 8.6 Tag `v1.0.0`, and make sure CI is green on the tag.
 

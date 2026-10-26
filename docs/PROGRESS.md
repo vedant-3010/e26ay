@@ -14,7 +14,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 5 Frontend + Monitor | ✅ done | ~1.5 h | All PRD F2 ACs pass; 366 KB gz JS total (129 KB shell); no overflow at 375 px |
 | 6 Decision Desk | ✅ done | ~1.5 h | F1 ACs 1–9 pass; story days 27/28 Jan checked in both views; app-wide visual refinement |
 | 7 Accuracy Lab + Methodology | ✅ done | ~1.5 h | F3 Must + all 6 Should ACs; F5 complete; all pages 375 px clean |
-| 8 Polish + release | ⬜ | | |
+| 8 Polish + release | 🟨 code complete | ~1.25 h | 8.1, 8.3, 8.4, 8.6 done; 8.2 measured on the Docker image; slow-4G LCP 1.4–2.1 s; README, demo numbers and `v1.0.0` tag. Waiting on 👤: 8.5 Vercel deploy, video, form |
 | 9 Stretch | ⬜ | | |
 
 Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
@@ -25,8 +25,10 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 - Video: _(fill in)_
 
 ## Waiting on the human 👤
-1. **Approve Vercel team access for the connector** (one click, link in the chat; it expires after 10 minutes and a new one can be made any time). Then Claude Code creates the Vercel project from `vedant-3010/e26ay` and runs the Phase 0 production checks itself. The alternative is to import the repo at vercel.com/new.
-2. Commits are approved by the human one batch at a time (standing instruction). Pushing is the human's call.
+1. **Deploy on Vercel** (closes Phase 0 and 8.5). Either import `vedant-3010/e26ay` at vercel.com/new and keep the **FastAPI** preset (no env vars), or approve the Vercel connector's team access so Claude Code can create the project. Then check in incognito: `/api/health` (snapshot `ac22a4140bca`, git SHA), `/accuracy` (deep link), `/api/x` (JSON 404), and that the README renders on GitHub. Put the URL in `README.md` (top) and in Links above, and record API timings and LCP on the production URL (PLAN 8.2 asks for that URL; the numbers below are from the identical Docker image).
+2. **Record the video** from `docs/DEMO_SCRIPT.md` (numbers filled; story days 27 → 28 Jan), upload it as Unlisted, and add the link to the README.
+3. **Submission form:** check every URL in incognito.
+4. Commits: since 2026-10-26 Claude Code commits and pushes without asking (standing instruction), with no AI attribution.
 
 ## Decisions taken by Claude Code (the human asked for this on 2026-10-26)
 - **Process (later the same day):** the human said "take decisions on your own, don't ask me, I am not available … complete till phase 8". From Phase 6 onward Claude Code commits and pushes without asking, still with no AI attribution, and records every decision here.
@@ -37,6 +39,49 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 8: Polish, README, release 🟨 (code complete; 8.5 waits on the human)
+- **8.1 UX pass:**
+  - Every route has an `errorElement` (`RouteError`: the shared error state, not a blank page).
+  - Pages set `document.title` ("Accuracy Lab · WindDesk").
+  - Every Accuracy Lab chart panel offers its data as CSV (lead curve, distribution, level and calibration, daily, by hour), as the data-table alternative for each chart.
+  - The Desk KPI reads "Wind you can count on (90%)".
+  - Units, states, keyboard use, reduced motion and the 375 px layout were rechecked from screenshots.
+- **8.2 Performance** (production Docker image `winddesk:release`; Chrome over CDP with a cold cache; "slow 4G" = Lighthouse mobile throttling of 1.6 Mbps, 150 ms RTT, 4× CPU):
+  - **Finding:** first load sent **1,156 KB** because uvicorn and `StaticFiles` don't compress. Slow-4G LCP was **≈ 7.0 s** (budget 2.5 s), and the LCP element was the summary text, which waited for the 230 KB-gzipped ECharts chunk.
+  - **Fix 1:** `GZipMiddleware(minimum_size=1024)` brought the transfer down to **375 KB** and LCP to 2.7–3.3 s. Because the app now has top-level middleware, `[tool.vercel.fastapi.static] cdn = true` keeps the SPA on Vercel's CDN; checked against Vercel's FastAPI docs, and ARCHITECTURE §4 and §6.1 were updated.
+  - **Fix 2:** `EChart` imports the ECharts runtime on first mount, so text and KPIs no longer wait for it.
+  - LCP after both fixes:
+
+    | Page | Unthrottled | Slow 4G |
+    |---|---|---|
+    | `/` (Desk) | 536 ms | 2,056 ms |
+    | `/monitor` | 488 ms | 1,640 ms |
+    | `/accuracy` | 540 ms | 2,088 ms |
+    | `/methodology` | 540 ms | 1,428 ms |
+
+  - **Bundle** (gzipped): shell 129.8 KB, ECharts 199.9 KB, shared 29.0 KB, page chunks 4–8 KB each, CSS 8.6 KB. JS in total is about 390 KB (budget 450 KB).
+  - **API**, measured with `curl -w '%{time_total}'` against the container, 1 cold run then 5 warm runs, gzip on:
+
+    | Endpoint | Cold | Warm (5 runs) | Size (gzip / raw) |
+    |---|---|---|---|
+    | `/api/health` | 2.9 ms | 2.4–3.9 ms | 82 B / 82 B |
+    | `/api/meta` | 4.4 ms | 2.7–3.3 ms | 845 B / 2.0 KB |
+    | `/api/monitor` (full month, 4 h) | 38.4 ms | 9.2–11.6 ms | 15.5 KB / 131 KB |
+    | `/api/decision?delivery_date=2026-01-27` | 15.1 ms | 2.1–2.3 ms | 3.0 KB / 22 KB |
+    | `/api/accuracy` | 31.4 ms | 1.3–1.5 ms | 3.6 KB / 15.8 KB |
+
+    All are far under the 300 ms p95 budget. The PLAN asks for these numbers on the production URL, so re-run them there once 8.5 is done.
+- **Consistency fix:** `INSIGHTS.md` said "2,022 MW" where the app shows 2,023 MW, because 2,022.47 is served as 2,022.5. It also said "17%" where the Desk summary says 18%, since it was written before the Phase 7 rounding fix. `narrative.display_round` is now public; the notebook uses it for every whole number and was re-executed. INSIGHTS, the demo script, the README and the app now agree.
+- **8.3 README:** live and video placeholders; three screenshots (`docs/screenshots/`, the production image); what it does; how to start (Docker one-liner, `make setup && make dev`, `make ingest`); a files and directories table; architecture with the Mermaid diagram and ADR links; methodology and definitions; testing gates and measured performance; deployment (Vercel, Docker, and `heroku.yml` added as the Heroku fallback); the AI tools disclosure; limitations and next steps.
+- **8.4 Demo script:** every number filled from INSIGHTS and checked against the API. Part 1 opens on Tue 27 Jan, then Wed 28 Jan (the decision from Phase 6).
+  - Verifying the forecast-evolution beat changed the script. On 28 Jan the 09:30 run (N2EX) was **identical** to the 07:30 run (11.1 GW average). The first run to see the drop was 11:30, after both auctions, and it was still high (8.8 GW against 5.8 GW actual). The script now says this, instead of "an N2EX bidder would have seen it coming".
+  - The cutoff recommendation was changed to match the data: keep 09:20, because the later run buys only 1.3%.
+- **8.6:** tagged `v1.0.0` after CI went green on `main`; CI on the tag is recorded below.
+- **Checks:**
+  - `make check` ✅: 295 pytest with 99% analytics coverage, 86 Vitest, and the build (the chunk-size warning limit was raised to 650 KB with a comment, because the ECharts chunk is intentional and modular).
+  - `make test-contract` ✅ 143. `make notebook` ✅.
+- **PRD §9 release checklist:** [x] React + Python + Docker; [x] public repo with an anonymous name and a complete README. Still to do: [ ] Vercel URL (👤), [ ] video (👤), [ ] form (👤).
 
 ### 2026-10-26 — Phase 7: Accuracy Lab and Methodology ✅
 - **Accuracy Lab:**
