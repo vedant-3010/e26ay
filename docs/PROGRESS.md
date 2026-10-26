@@ -6,7 +6,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 
 | Phase | Status | Time used | Notes |
 |---|---|---|---|
-| 0 Walking skeleton | 🟨 in progress | ~1.1 h | Local, Docker and CI green. Only remaining DoD item: 👤 Vercel import + production URL checks |
+| 0 Walking skeleton | ✅ done | ~1.1 h | Local, Docker and CI green; live on Vercel (`e26ay-wtpn.vercel.app`) with the Phase 0 config unchanged |
 | 1 Data snapshot | ✅ done | ~1.0 h | Snapshot `ac22a4140bca`; 13 contract tests pass; started while Phase 0 waits on Vercel (human said continue) |
 | 2 Analytics core | ✅ done | ~1.25 h | 99.5% analytics coverage; store loads in ~257 ms; calibration within ±5 pp |
 | 3 Notebook + insights | ✅ done | ~0.75 h | Notebook executed with outputs; `INSIGHTS.md` written by it; alignment check changes nothing |
@@ -14,18 +14,20 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 5 Frontend + Monitor | ✅ done | ~1.5 h | All PRD F2 ACs pass; 366 KB gz JS total (129 KB shell); no overflow at 375 px |
 | 6 Decision Desk | ✅ done | ~1.5 h | F1 ACs 1–9 pass; story days 27/28 Jan checked in both views; app-wide visual refinement |
 | 7 Accuracy Lab + Methodology | ✅ done | ~1.5 h | F3 Must + all 6 Should ACs; F5 complete; all pages 375 px clean |
-| 8 Polish + release | 🟨 code complete | ~1.25 h | 8.1, 8.3, 8.4, 8.6 done; 8.2 measured on the Docker image; slow-4G LCP 1.4–2.1 s; README, demo numbers and `v1.0.0` tag. Waiting on 👤: 8.5 Vercel deploy, video, form |
+| 8 Polish + release | ✅ done | ~1.5 h | Deployed (function in London); 8.2 on the production URL: slow-4G LCP 1.8–2.0 s, CDN hits 65–119 ms median; README, demo numbers, `v1.0.0`. Still 👤: video, form (outside the DoD) |
 | 9 Stretch | ✅ 3 of 4 | ~1.25 h | F7 what-if, Playwright (desktop + 375 px, own CI job), F8 live mode behind a flag. 9.4 Heroku deploy needs 👤 (account; paid) |
 
 Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Links
 - Repo: https://github.com/vedant-3010/e26ay (public)
-- Production URL: _(pending: Vercel import)_
+- Production URL: https://e26ay-wtpn.vercel.app
 - Video: _(fill in)_
 
 ## Waiting on the human 👤
-1. **Deploy on Vercel** (closes Phase 0 and 8.5). Either import `vedant-3010/e26ay` at vercel.com/new and keep the **FastAPI** preset (no env vars), or approve the Vercel connector's team access so Claude Code can create the project. Then check in incognito: `/api/health` (snapshot `ac22a4140bca`, git SHA), `/accuracy` (deep link), `/api/x` (JSON 404), and that the README renders on GitHub. Put the URL in `README.md` (top) and in Links above, and record API timings and LCP on the production URL (PLAN 8.2 asks for that URL; the numbers below are from the identical Docker image).
+1. **Delete the duplicate Vercel project `e26ay`.** It builds from a subfolder and fails on every push, which puts a red ❌ ("Vercel – e26ay") on each commit on GitHub. In vercel.com → project **e26ay** → Settings → scroll to the bottom → Delete Project. The working project is **e26ay-wtpn**, and nothing in the repo needs to change.
+   - Optional: after the deletion frees the name, add `e26ay.vercel.app` under e26ay-wtpn → Settings → Domains for a shorter URL. If you do, update `README.md`, `PROD_URL` in the `Makefile` and Links above.
+   - Or approve the connector's team access, and Claude Code can read the project settings itself.
 2. **Record the video** from `docs/DEMO_SCRIPT.md` (numbers filled; story days 27 → 28 Jan), upload it as Unlisted, and add the link to the README.
 3. **Submission form:** check every URL in incognito.
 4. Commits: since 2026-10-26 Claude Code commits and pushes without asking (standing instruction), with no AI attribution.
@@ -36,9 +38,52 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 - **Story-day order for Part 1:** open on **Tue 27 Jan** (the buffer did its job), then **Wed 28 Jan** as the honest limit, with Sat 17 Jan available as the typical day. Applied in Phase 8 when filling `DEMO_SCRIPT.md`.
 - **Default buffer method:** conditional (level-based) LODO, per PRD F4 "Should". The flat-buffer trade-off (−633 MW held back, −1.6 pp coverage at 90%) is stated on the Methodology page.
 - **Deployment:** use the human's connected Vercel account (Hobby, `vedant-3010`) to create the project, because the brief requires a Vercel/Heroku deployment and the repo is already public.
+- **Production URL is `e26ay-wtpn.vercel.app`.** It is the project that deployed with the committed config; the other import (`e26ay`) builds from a subfolder and should be deleted rather than fixed. Nothing in the repo is bent to fit a subfolder root, such as a second `pyproject.toml`, which the "one manifest" rule forbids anyway.
+- **Function region `lhr1`.** A UK desk and Elexon are both in London; Hobby allows one region of our choice.
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Deployed on Vercel: closes 0.9, 8.2 and 8.5 ✅
+- **Live at https://e26ay-wtpn.vercel.app.** The human imported the repo, which created **two** projects. `e26ay-wtpn` (root `./`, preset FastAPI) deployed on the first try with the committed config, unchanged from Phase 0. `e26ay` fails every build with `FASTAPI_ENTRYPOINT_NOT_FOUND`.
+  - **Diagnosis**, from Vercel's own resolver (`packages/python/src/entrypoint.ts`): that generic message appears only when the build directory has no `pyproject.toml` with `tool.vercel.entrypoint`.
+  - Our `pyproject.toml` parses with Vercel's TOML library (`smol-toml`). From the repo root the entrypoint resolves to `backend/winddesk/main.py`.
+  - So `e26ay` builds from a subfolder. Its settings can't be read without the connector's team approval.
+  - The fix is a dashboard action (see "Waiting on the human"). ARCHITECTURE §6.1 now says why the Root Directory must stay at the repo root.
+- **Function region → `lhr1` (London)**, via `vercel.json` `regions`. The users are a UK desk, and live mode calls Elexon; Vercel's default is `iad1` (Washington). Measured from this machine (India, edge `bom1`), the bare round trip fell from 260–300 ms to 160–200 ms.
+- **Checks in cold contexts** (curl with no cookies; Playwright with a fresh browser context per test, equivalent to incognito):
+  - `/api/health` → `ok`, snapshot `ac22a4140bca`, git SHA of the deployed commit. The data snapshot is inside the function bundle.
+  - `/`, `/monitor`, `/accuracy`, `/methodology`, `/live` and an unknown `/nope` all return the SPA (200, `text/html`). `/api/x` returns the JSON 404, and `/api/live` returns 404 because live mode is off.
+  - 422s come back in the error shape (`delivery_date=2027-01-01`, `cutoff=09:07`, a monitor `end` before `start`). `If-None-Match` gives 304. JSON is gzipped.
+  - Vercel passes `public, max-age=300` to browsers and keeps `s-maxage` for its CDN: the second request is `x-vercel-cache: HIT`.
+  - The 27 Jan numbers match the demo script: run 07:30, 477,303 MWh forecast, 393,804.5 MWh actual, firm held 23/24, largest shortfall 5,914 MW.
+  - The repo is public (`private: false`), and the README renders logged out, screenshots included.
+- **`make test-e2e-prod`** (new): the 10 Playwright smoke tests against the live URL.
+  - First run: 8/10. The two desktop tests timed out at 5 s while the page waited for data. The parallel run had woken new function instances, and their cold starts took longer than one assertion allows.
+  - Re-run: 10/10. Remote runs now allow 15 s per assertion, and cold start is measured on its own (below).
+- **Cold start:** the first request to reach a fresh production deployment took 0.28 s, the same as a warm one, because Vercel pre-warms production. Locally the app is ready in about 0.7 s (imports 0.25–0.41 s, store 0.27 s). Extra instances started under a burst take longer: they caused the two timeouts above.
+- **8.2 on the production URL** (`lhr1`, measured from India; 5 warm runs each, gzip on; "function" = cache-busted, so every request reaches Python):
+
+  | Endpoint | CDN hit, median (range) | Function, median (range) |
+  |---|---|---|
+  | `/api/health` (no-store, round-trip baseline) | — | 183 ms (161–202) |
+  | `/api/meta` | 65 ms (54–266) | 236 ms (175–412) |
+  | `/api/decision?delivery_date=2026-01-27` | 81 ms (35–182) | 223 ms (191–257) |
+  | `/api/monitor` (full month, 24 h) | 86 ms (39–318) | 321 ms (246–374) |
+  | `/api/accuracy` | 119 ms (36–280) | 203 ms (161–298) |
+
+  - Budget: "API p95 < 300 ms warm on Vercel". The CDN path meets it from India. On the function path, about 183 ms of each request is the India–London round trip that `/api/health` measures. Server work plus transfer adds about 20–140 ms, the most for the 15.5 KB month of monitor data.
+  - A desk in the UK has a round trip of a few ms, so its uncached calls should land well under the budget. That could not be measured from here.
+  - Data responses are cached for a day at the CDN (`s-maxage=86400`), so most requests are CDN hits.
+  - **LCP on the production URL** (Playwright Chromium, cold cache per run, 1280 × 900):
+
+    | Page | Unthrottled | Slow 4G |
+    |---|---|---|
+    | `/?date=2026-01-27` | 1,232 ms | 1,972 ms |
+    | `/accuracy` | 772 ms | 1,988 ms |
+    | `/monitor` | 520 ms | 1,760 ms |
+
+    Every page is under 2.5 s; first load transfers 387–395 KB.
 
 ### 2026-10-26 — Phase 9: Stretch ✅ (items 1–3; item 4 waits on the human)
 - **Started while 8.5 waits on the Vercel import.** The human said "next". Phase 8's only open items are account actions, the same situation as Phase 1 starting while Phase 0 waited.

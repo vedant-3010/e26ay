@@ -34,7 +34,7 @@ Execute phases **in order**, one per `/phase N` run. Each phase ends with its **
 - [x] 0.6 `Dockerfile` (multi-stage), `.dockerignore`, `docker-compose.yml` (`app` + `dev` profile). Verify `docker compose up --build` serves the SPA and `/api/health` on :8000.
 - [x] 0.7 `.github/workflows/ci.yml`: backend, frontend and docker-build jobs.
 - [x] 0.8 Vercel config per ARCHITECTURE §6.1 (`[tool.vercel]` in pyproject, `vercel.json`).
-- [ ] 0.9 👤 Ask the human to:
+- [x] 0.9 👤 Ask the human to: *(done 2026-10-26: live at https://e26ay-wtpn.vercel.app with the Phase 0 config unchanged; checks and the duplicate-project diagnosis are in `PROGRESS.md`)*
   - (a) create a **public GitHub repo with the random name** from `setup.sh` and push;
   - (b) import it into Vercel (Hobby);
   - (c) share the production URL and, if the build fails, the build log.
@@ -155,7 +155,7 @@ Three pitch sentences: …
 ## Phase 8 — Polish, README, release
 
 - [x] 8.1 UX pass against UI_SPEC §5–7: copy, units, states, keyboard, reduced motion, 375px.
-- [ ] 8.2 Performance: bundle size and API timings on the production URL (`curl -w '%{time_total}'`, warm, 5 runs each). Record in `PROGRESS.md`. *(Measured on the production Docker image and recorded; LCP fixed. Re-run on the URL after 8.5.)*
+- [x] 8.2 Performance: bundle size and API timings on the production URL (`curl -w '%{time_total}'`, warm, 5 runs each). Record in `PROGRESS.md`. *(Docker image first, then the production URL with LCP; both recorded.)*
 - [x] 8.3 **README.md** containing:
   - name, one-liner, **live link**, video link placeholder
   - screenshot(s)
@@ -169,7 +169,7 @@ Three pitch sentences: …
   - **AI tools used**: state explicitly that Claude Code (Anthropic) was used for planning documents and implementation under human direction and review, and say what was reviewed or verified by hand
   - limitations and next steps
 - [x] 8.4 Fill the numbers in `docs/DEMO_SCRIPT.md` from `INSIGHTS.md`.
-- [ ] 8.5 Final deploy. 👤 Human verifies in incognito: the app URL, the repo URL (public), and the README renders.
+- [x] 8.5 Final deploy. 👤 Human verifies in incognito: the app URL, the repo URL (public), and the README renders. *(Checked by Claude Code in cold contexts: curl without cookies, fresh Playwright contexts, and the logged-out GitHub page. A last look by the human before submitting is still worthwhile.)*
 - [x] 8.6 Tag `v1.0.0`, and make sure CI is green on the tag.
 
 **DoD:** the release checklist in PRD §9 is complete, apart from the human-only video and form steps.

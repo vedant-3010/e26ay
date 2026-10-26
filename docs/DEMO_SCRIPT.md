@@ -2,7 +2,7 @@
 
 The numbers come from `docs/INSIGHTS.md` (snapshot `ac22a4140bca`) and were checked against the app on 2026-10-26. Spoken figures are rounded the way the app shows them. Rehearse once with a timer. Each part must stay **under 5:00**. Aim for 4:30 to leave slack.
 
-**Recording setup:** 1080p, browser at 110% zoom, bookmarks bar hidden, light theme, notifications off. Before recording, open these tabs in order:
+**Recording setup:** 1080p, browser at 110% zoom, bookmarks bar hidden, light theme, notifications off. Before recording, open these tabs on https://e26ay-wtpn.vercel.app, in order:
 
 1. `/?date=2026-01-27&auction=epex&conf=0.9&view=trader` (story day 1, Trader view)
 2. `/?date=2026-01-28&auction=epex&conf=0.9&view=hindsight` (story day 2)

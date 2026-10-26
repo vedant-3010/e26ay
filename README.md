@@ -2,7 +2,7 @@
 
 **For a UK electricity supplier's day-ahead desk: what the national wind forecast said when you had to commit, how wrong it tends to be, and how much wind you can bank on.** The pilot covers every purchase decision made in January 2026.
 
-- **Live app:** _added after the Vercel deploy (see [Deployment](#deployment))_
+- **Live app:** https://e26ay-wtpn.vercel.app
 - **Demo video (unlisted, ≤ 10 min):** _added after recording_
 - **Data:** Elexon BMRS [`FUELHH`](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH) (actual wind) and [`WINDFOR`](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR) (forecast runs), both public. Nothing else.
 
@@ -159,7 +159,7 @@ The full specification is [`docs/DATA_AND_ANALYTICS.md`](docs/DATA_AND_ANALYTICS
 | Backend | `ruff` (lint and format), `mypy --strict` on analytics, services and api, and **450 pytest tests**: 307 fast tests, gated at ≥ 90% line coverage on `winddesk.analytics` (currently 99%), plus 143 contract tests on the real snapshot |
 | Frontend | ESLint, Prettier, `tsc` (strict, no `any`), **103 Vitest tests** (formatting, URL state, chart option builders, every page's states), and a production build |
 | API contract | `make gen-api-check`: CI fails if the committed TypeScript types drift from the OpenAPI schema |
-| End-to-end | `make test-e2e`: **Playwright** against FastAPI serving the production build, at desktop width and 375 px. Every page loads, one control changes the view, the charts actually paint, there are no console errors and no horizontal overflow. It runs as its own CI job |
+| End-to-end | `make test-e2e`: **Playwright** against FastAPI serving the production build, at desktop width and 375 px. Every page loads, one control changes the view, the charts actually paint, there are no console errors and no horizontal overflow. It runs as its own CI job, and `make test-e2e-prod` runs it against the live URL |
 | Docker | The image is built, run and smoke-tested (`/api/health` and the SPA) in CI |
 
 Measured on the production Docker image (Phase 8; see [`docs/PROGRESS.md`](docs/PROGRESS.md)):
@@ -168,9 +168,11 @@ Measured on the production Docker image (Phase 8; see [`docs/PROGRESS.md`](docs/
 - **JS:** about 390 KB gzipped in total (budget 450 KB). The ECharts chunk loads only when a chart mounts.
 - **LCP:** 0.5–0.7 s unthrottled and 1.4–2.1 s on Lighthouse-style slow 4G (budget 2.5 s).
 
+On the live URL, measured from India: slow-4G LCP is 1.8–2.0 s. CDN-cached API responses take a median of 65–119 ms. Uncached ones reach the London function, where the India–London round trip alone is about 180 ms, and server work adds about 20–140 ms.
+
 ## Deployment
 
-**Vercel (primary).** Import the GitHub repo at vercel.com/new, keep the **FastAPI** framework preset that `vercel.json` pins, and deploy. There are no environment variables to set. Vercel runs `npm --prefix frontend ci && npm --prefix frontend run build`, bundles `backend.winddesk.main:app` (from `[tool.vercel] entrypoint`) as one Python function with the data snapshot inside it, and promotes `frontend/dist` to its CDN (`[tool.vercel.fastapi.static] cdn = true`, needed because the app has GZip middleware). After the deploy, check `/api/health` (it reports the snapshot id and git SHA), a deep link such as `/accuracy`, and an unknown `/api/x`, which should return a JSON 404.
+**Vercel (primary; live at https://e26ay-wtpn.vercel.app).** Import the GitHub repo at vercel.com/new as **one** project with the Root Directory left at the repo root (from a subfolder Vercel can't see `pyproject.toml` and fails with `FASTAPI_ENTRYPOINT_NOT_FOUND`), keep the **FastAPI** framework preset that `vercel.json` pins, and deploy. There are no environment variables to set. Vercel runs `npm --prefix frontend ci && npm --prefix frontend run build`, bundles `backend.winddesk.main:app` (from `[tool.vercel] entrypoint`) as one Python function with the data snapshot inside it, and promotes `frontend/dist` to its CDN (`[tool.vercel.fastapi.static] cdn = true`, needed because the app has GZip middleware). After the deploy, check `/api/health` (it reports the snapshot id and git SHA), a deep link such as `/accuracy`, and an unknown `/api/x`, which should return a JSON 404. `make test-e2e-prod` then runs the Playwright smoke tests against the live URL. The function runs in London (`regions: ["lhr1"]`), next to the desk and to Elexon.
 
 **Docker, anywhere.** The image listens on `$PORT` (default 8000), has a health check, and needs no secrets:
 

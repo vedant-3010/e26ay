@@ -163,7 +163,7 @@ Quantifies error for desk leads and analysts.
 ## 9. Release checklist (from the brief)
 
 - [x] React frontend, Python backend, Docker
-- [ ] Deployed on Vercel (Heroku fallback), public URL works in incognito
+- [x] Deployed on Vercel (Heroku fallback), public URL works in incognito
 - [x] Public GitHub repo with an anonymous name; README with files/directories, how to start, live link, AI-tools disclosure
 - [ ] Unlisted YouTube video ≤ 10 min: Part 1 client pitch ≤ 5 min, Part 2 tech-lead walkthrough ≤ 5 min
 - [ ] Submission form filled; every URL checked in incognito
