@@ -71,7 +71,7 @@ describe('Decision Desk', () => {
     await screen.findByRole('region', { name: 'Decision context' })
     expect(kpiLabels()).toEqual([
       'Forecast energy',
-      'Firm wind (90%)',
+      'Wind you can count on (90%)',
       'Actual energy',
       'Day MAE',
       'Largest shortfall',
@@ -81,7 +81,11 @@ describe('Decision Desk', () => {
     expect(screen.getByText(/Wind delivered 35 GWh/)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('radio', { name: 'Trader view' }))
-    expect(kpiLabels()).toEqual(['Forecast energy', 'Firm wind (90%)', 'Buffer held back (90%)'])
+    expect(kpiLabels()).toEqual([
+      'Forecast energy',
+      'Wind you can count on (90%)',
+      'Buffer held back (90%)',
+    ])
     expect(screen.queryByText(/Wind delivered/)).not.toBeInTheDocument()
     expect(screen.getByText(/covered only 3 of 4 hours/)).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'decision chart trader' })).toBeInTheDocument()

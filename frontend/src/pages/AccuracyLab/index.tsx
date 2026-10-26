@@ -40,6 +40,8 @@ import {
 } from '@/lib/urlState'
 import { cn } from '@/lib/utils'
 
+import { accuracyCsv } from './exportCsv'
+
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
 const URL_SPEC = {
   population: nullableEnumParam(['decision', 'horizon'] as const),
@@ -304,6 +306,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
         title="A · Error by lead time"
         description="All runs × the hours they cover, by actual lead time; how fast the forecast degrades and where the decisions sit"
         legend={leadLegend(windowLabel)}
+        csv={accuracyCsv.leadCurve(data)}
         footnote="Bins are one hour of lead time. This view always uses every run; the population setting above does not change it."
       >
         <LeadCurveChart data={data} />
@@ -314,6 +317,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
           title="C · Buffer by wind level"
           description="Shortfall to cover at each confidence, by how windy the forecast was"
           legend={levelLegend(data.calibration !== null, pct)}
+          csv={accuracyCsv.level(data)}
           actions={
             data.calibration ? (
               <p className="text-xs">
@@ -337,6 +341,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
             { label: 'Shortfall (forecast above actual)', color: 'var(--shortfall)', kind: 'area' },
             { label: 'Surplus', color: 'var(--surplus)', kind: 'area' },
           ]}
+          csv={accuracyCsv.distribution(data)}
           footnote={`P10 ${fmtSignedMW(data.distribution.p10_mw)} · P50 ${fmtSignedMW(data.distribution.p50_mw)} · P90 ${fmtSignedMW(data.distribution.p90_mw)}; 250 MW bins.`}
         >
           <DistributionChart data={data} />
@@ -353,6 +358,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
           title="E · Day by day"
           description="MAE and bias for each delivery day; select a day to open it in the Decision Desk"
           legend={MAE_BIAS_LEGEND}
+          csv={accuracyCsv.daily(data)}
         >
           <DailyChart data={data} onSelectDay={(d) => navigate(deskLink(d))} />
         </ChartPanel>
@@ -360,6 +366,7 @@ function LabBody({ data, meta }: { data: AccuracyData; meta: Meta }) {
           title="D · By hour of day"
           description="MAE and bias by UK hour"
           legend={MAE_BIAS_LEGEND}
+          csv={accuracyCsv.byHour(data)}
         >
           <ByHourChart data={data} />
         </ChartPanel>

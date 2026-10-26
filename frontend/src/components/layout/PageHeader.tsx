@@ -1,6 +1,9 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+  useEffect(() => {
+    document.title = `${title} · WindDesk`
+  }, [title])
   return (
     <div className="mb-5">
       <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{title}</h1>

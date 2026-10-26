@@ -132,3 +132,19 @@ describe('Accuracy Lab', () => {
     fireEvent.click(within(table).getByText('20,942 MW'))
   })
 })
+
+describe('accuracy CSVs', () => {
+  it('every chart exports its data', async () => {
+    const { accuracyCsv } = await import('./exportCsv')
+    const d = accuracyData()
+    expect(accuracyCsv.leadCurve(d).build().split('\r\n')[1]).toBe(
+      '0.5,248,1669,2000,1455,1500,3430,6000',
+    )
+    expect(accuracyCsv.distribution(d).build().split('\r\n')[1]).toBe('-500,-250,2')
+    expect(accuracyCsv.level(d).filename).toBe(
+      'winddesk-accuracy-buffer-by-level_epex_2026-01-02_2026-02-01.csv',
+    )
+    expect(accuracyCsv.daily(d).build()).toContain('2026-01-28,5329,5329,6210')
+    expect(accuracyCsv.byHour(d).build()).toContain('0,31,1950,1900,4000')
+  })
+})

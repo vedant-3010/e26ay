@@ -189,9 +189,10 @@ function DeskBody({
       sub: k.forecast_mwh === null ? `run covers ${covered} of ${hours} h` : `${day}, ${hours} h`,
     },
     {
-      label: `Firm wind (${pct}%)`,
+      // Plain language first, the term in the explanation (UI_SPEC §5).
+      label: `Wind you can count on (${pct}%)`,
       value: fmtMW(k.avg_firm_mw),
-      sub: 'hourly average',
+      sub: 'firm wind, hourly average',
       info: GLOSSARY.firmWind,
     },
   ]
