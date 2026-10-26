@@ -13,7 +13,7 @@ Claude Code updates this file at the end of every phase (and whenever something 
 | 4 API | ✅ done | ~1.0 h | 5 endpoints; 54 API tests + 15 API contract tests; cold ≤ 36 ms, warm ≈ 1 ms |
 | 5 Frontend + Monitor | ✅ done | ~1.5 h | All PRD F2 ACs pass; 366 KB gz JS total (129 KB shell); no overflow at 375 px |
 | 6 Decision Desk | ✅ done | ~1.5 h | F1 ACs 1–9 pass; story days 27/28 Jan checked in both views; app-wide visual refinement |
-| 7 Accuracy Lab + Methodology | ⬜ | | |
+| 7 Accuracy Lab + Methodology | ✅ done | ~1.5 h | F3 Must + all 6 Should ACs; F5 complete; all pages 375 px clean |
 | 8 Polish + release | ⬜ | | |
 | 9 Stretch | ⬜ | | |
 
@@ -37,6 +37,39 @@ Legend: ⬜ not started · 🟨 in progress · ✅ done · ⛔ blocked
 
 ## Log
 <!-- Newest first. One entry per phase or significant event. -->
+
+### 2026-10-26 — Phase 7: Accuracy Lab and Methodology ✅
+- **Accuracy Lab:**
+  - Controls (all in the URL): forecasts evaluated (EPEX 09:20 | N2EX 09:50 | Fixed horizon + slider), delivery-day range with "Full pilot", and confidence.
+  - Key takeaways (3 templated sentences from the API) and a headline readout (MAE, RMSE, bias, P90 shortfall, WAPE, hours).
+  - A · lead curve: MAE, P90 and P99 |error|, and bias, with the decision window shaded.
+  - B · signed-error histogram: 250 MW bins coloured by sign, P10/P50/P90 lines.
+  - C · buffer by wind level: P80/P90/P95 bars, plus achieved coverage on its **own grid** (no dual axis) with the target line.
+  - G · value of the forecast (hero figure + comparison bars) and F · auction timing (table).
+  - E · daily (a click opens the Desk) and D · by hour.
+  - H · worst-10 table (row and link open the Desk for that day and auction).
+  - Decision-only sections are hidden for Fixed horizon.
+- **Methodology:** a contents list with 9 anchored sections:
+  - data sources (Elexon links, transmission-metered scope, snapshot id) and the pilot window;
+  - definitions (PRD glossary) and how the forecast is picked, with an **inline SVG timeline** drawn to scale from the tokens and `<title>`/`<desc>` alternatives;
+  - alignment, and buffers and calibration (LODO, n < 30 fallback, live achieved %, the trade-off);
+  - the data-quality table from `/api/meta`;
+  - what the data shows (live bias figures, the late run) and limitations.
+- **Fixes from review:**
+  - **Narrative and UI rounding now agree.** "2,022 MW" in a takeaway sat beside "2,023 MW" in the readout because Python's banker's rounding met the browser's half-up. Python now rounds to 1 decimal, then half-up. Test added.
+  - A 640 px table widened the whole page on phones (grid `min-width: auto`) → `min-w-0` on grid children.
+  - Segmented controls wrap.
+  - Short tick labels on the level chart; short P10/P50/P90 labels on the histogram.
+  - Literal backticks in the definitions; overlapping timeline labels.
+- **PRD F3 acceptance criteria:**
+  - Must: [x] 1 population selector and range, [x] 2 headline strip, [x] 3 error vs lead time with the window shaded, [x] 4 distribution with P10/P50/P90, [x] 5 three takeaways.
+  - Should (all built): [x] 6 buffer by level + calibration, [x] 7 by hour, [x] 8 daily → Desk, [x] 9 worst 10 → Desk, [x] 10 auction comparison, [x] 11 value of the forecast.
+- **PRD F5 complete:** sources with links, pilot window, definitions, selection rules + timeline graphic, alignment, calibration method, limitations, data-quality table.
+- **Checks:**
+  - `make check` ✅: 294 pytest (99.66%), **85 Vitest** (+17: accuracy option builders incl. the no-dual-axis assertion, Accuracy Lab flows incl. population switch, range validation, hidden sections, Desk deep links, and Methodology sections, timeline alternative text, quality table, live findings).
+  - `make test-contract` ✅ 143.
+  - JS 392 KB gzipped in total.
+  - Every page measures `scrollWidth` 375 at a 375 px viewport; screenshots reviewed in light and dark.
 
 ### 2026-10-26 — Phase 6: Decision Desk ✅ (+ app-wide visual refinement)
 - **Built:**

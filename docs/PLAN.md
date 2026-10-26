@@ -143,10 +143,10 @@ Three pitch sentences: …
 
 ## Phase 7 — Accuracy Lab and Methodology
 
-- [ ] 7.1 Controls (population, range, confidence) + takeaways + headline strip.
-- [ ] 7.2 Must charts: A (lead curve) and B (distribution).
-- [ ] 7.3 Should, in pitch-value order: G value of forecast → F auction timing → C buffer by level (+ calibration) → E daily (click → Desk) → H worst table (click → Desk) → D by hour.
-- [ ] 7.4 Methodology page per UI_SPEC §3.4, including the SVG timeline and the data-quality table.
+- [x] 7.1 Controls (population, range, confidence) + takeaways + headline strip.
+- [x] 7.2 Must charts: A (lead curve) and B (distribution).
+- [x] 7.3 Should, in pitch-value order: G value of forecast → F auction timing → C buffer by level (+ calibration) → E daily (click → Desk) → H worst table (click → Desk) → D by hour.
+- [x] 7.4 Methodology page per UI_SPEC §3.4, including the SVG timeline and the data-quality table.
 
 **DoD:** PRD F3 Must ACs pass and every built Should AC passes · F5 is complete.
 

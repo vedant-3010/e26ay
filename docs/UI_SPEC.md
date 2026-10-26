@@ -120,6 +120,8 @@ A trading-desk tool people trust at 09:00 with a deadline: dense but quiet, numb
 ┌ H. Worst 10 hours table (click row → Decision Desk for that day) ─────────┐
 ```
 - Sections with `null` data (Should items not built yet) are hidden, not broken.
+- **Built order (Phase 7):** controls → key takeaways → headline readout → A (full width) → C | B → G | F → E | D → H. This is a reordering of the wireframe so the page reads in the demo script's order (lead curve → buffers and calibration → value of the forecast → auction timing).
+- G is the page's single hero figure (40px). F is a figure comparison (a small table), not a chart, because the story is two numbers. H rows and E bars open the day in the Decision Desk.
 
 ### 3.4 Methodology (`/methodology`)
 Long-form, readable page with a max width of 760px and anchored sections: Data sources (with links) · Pilot window · Definitions (glossary from the PRD) · How we pick the forecast (inline SVG timeline: runs ticking along the top, cutoff line, delivery day block, lead-time arrow) · Alignment · Buffers & calibration · Data quality table (from `/api/meta`) · Limitations.
