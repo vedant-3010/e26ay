@@ -7,6 +7,7 @@ import {
   fmtHourRange,
   fmtHours,
   fmtMW,
+  fmtMWh,
   fmtPct,
   fmtSignedMW,
   fmtSignedPct,
@@ -24,12 +25,24 @@ describe('power and energy', () => {
     expect(fmtSignedMW(-250.4)).toBe('−250 MW')
     expect(fmtSignedMW(0.3)).toBe('0 MW')
   })
-  it('formats GW and GWh', () => {
+  it('formats GW, GWh and MWh', () => {
     expect(fmtGW(13_100)).toBe('13.1 GW')
     expect(fmtGWh(412_000)).toBe('412 GWh')
+    expect(fmtMWh(72_000)).toBe('72,000 MWh')
+    expect(fmtMWh(549.6)).toBe('550 MWh')
   })
   it('renders missing values as an em dash', () => {
-    for (const f of [fmtMW, fmtSignedMW, fmtGW, fmtGWh, fmtPct, fmtSignedPct, fmtHours, fmtCount]) {
+    for (const f of [
+      fmtMW,
+      fmtSignedMW,
+      fmtGW,
+      fmtGWh,
+      fmtMWh,
+      fmtPct,
+      fmtSignedPct,
+      fmtHours,
+      fmtCount,
+    ]) {
       expect(f(null)).toBe(MISSING)
       expect(f(undefined)).toBe(MISSING)
       expect(f(Number.NaN)).toBe(MISSING)
